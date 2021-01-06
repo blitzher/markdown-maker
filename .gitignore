@@ -10,8 +10,9 @@ node_modules/
 .env
 .DS_Store
 
-# local temporaries
+# local temporaries and executables
 dist
+build/
 
 # actual document
 # synced via dropbox rather

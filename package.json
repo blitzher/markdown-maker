@@ -1,12 +1,16 @@
 {
     "name": "dnd-markdown",
-    "version": "1.1",
+    "version": "1.1.0",
     "description": "",
-    "main": "parse.js",
+    "bin":"parse.js",
+    "pkg": {
+        "assets": [ "node_modules/**/*", "parse.js" ],
+        "targets": [ "node12-macos-x64", "node12-win-x64" ]
+      },
     "scripts": {
         "test": "node parse.js test/main.md -o dist/bundle_t.md",
         "main": "node parse.js document/main.md -o dist/bundle.md",
-        "compile": "node compile.js dist/bundle.md",
+        "build": "pkg --output build/mdparse .",
         "clear": "rm -rf dist"
     },
     "keywords": [],
