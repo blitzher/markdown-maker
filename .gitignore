@@ -8,6 +8,7 @@ node_modules/
 
 # dotenv environment variables file
 .env
+.DS_Store
 
 # local temporaries
 dist
@@ -15,3 +16,4 @@ dist
 # actual document
 # synced via dropbox rather
 document
+bundle.md

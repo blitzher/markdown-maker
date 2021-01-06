@@ -1,0 +1,16 @@
+{
+    "contributes": {
+        "grammars": [
+            {
+                "scopeName": "todo-comment.injection",
+                "injectionSelector": "L:comment.line.double-slash",
+                "patterns": [
+                    {
+                        "include": "#todo-keyword"
+                    }
+                ],
+                "path": ""
+            }
+        ]
+    }
+}

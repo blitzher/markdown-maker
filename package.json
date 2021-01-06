@@ -1,18 +1,19 @@
 {
-  "name": "dnd-markdown",
-  "version": "1.0.0",
-  "description": "",
-  "main": "parse.js",
-  "scripts": {
-    "test" : "node parse.js test/main.md -o dist/bundle_t.md",
-    "main": "node parse.js document/main.md",
-    "compile" : "node compile.js dist/bundle.md",
-    "clear" : "rm -rf dist"
-  },
-  "keywords": [],
-  "author": "blitzher",
-  "license": "MIT",
-  "dependencies": {
-    "markdown-pdf": "^10.0.0"
-  }
+    "name": "dnd-markdown",
+    "version": "1.0.0",
+    "description": "",
+    "main": "parse.js",
+    "scripts": {
+        "test": "node parse.js test/main.md -o dist/bundle_t.md",
+        "main": "node parse.js document/main.md -o dist/bundle.md",
+        "compile": "node compile.js dist/bundle.md",
+        "clear": "rm -rf dist"
+    },
+    "keywords": [],
+    "author": "blitzher",
+    "license": "MIT",
+    "dependencies": {
+        "argparse": "^2.0.1",
+        "markdown-pdf": "^10.0.0"
+    }
 }
