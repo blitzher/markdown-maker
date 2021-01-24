@@ -1,4 +1,4 @@
-##### Smol
+## Smol
 
 Smol section also says #mdvar<hello>
 

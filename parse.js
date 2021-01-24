@@ -1,13 +1,21 @@
 const fs = require("fs");
 const path = require("path");
 const { ArgumentParser } = require("argparse");
-const { exit } = require("process");
 const { version } = require("./package.json");
 
 const argParser = new ArgumentParser({
     description: "Markdown bundler, with extra options",
 });
 
+/* follow a path into an object */
+function follow(obj, path) {
+    path.forEach((s) => {
+        obj = obj[s];
+    });
+    return obj;
+}
+
+//#region command line args
 argParser.add_argument("src", {
     help:
         "file to be parsed. If this is a directory, it looks for entry point in the directory, see --entry",
@@ -32,14 +40,15 @@ argParser.add_argument("-d", "--max-depth", {
 });
 argParser.add_argument("-e", "--entry", {
     help: "assign entry point in directory, by default is 'main.md'",
-    default: 'main.md'
-})
+    default: "main.md",
+});
 
 clargs = argParser.parse_args();
 
 if (clargs.debug) {
     console.dir(argParser.parse_args());
 }
+//#endregion
 
 /* parse some md
  * recursively with extra options */
@@ -71,24 +80,43 @@ class Parser {
 
         const raw = fs.readFileSync(this.file, "utf-8");
 
+        /* main parser instance loop */
         raw.split("\n").forEach((line) => {
-            if (line.trim().startsWith("#")) {
+            
+            /* a split version of line, looking like a section title */
+            let sectionized = line.trim().split(" ");
+
+            /* if all elements are hashes */
+            if ( sectionized[0][0] == '#' &&
+               ( sectionized[0].split("#").length - 1) == (sectionized[0].length)) {
+
+                if (clargs.verbose || clargs.debug) {
+                    console.log("found toc element: " + sectionized);
+                }
+
+                let level = sectionized[0].length
+                let title = line.split(" ").slice(1).join(" ")
+                this.opts.secs.push({level, title});
+
+                if (clargs.debug) {
+                    console.log("updated sections:", this.opts.secs)
+                }
             }
 
-            let __line = [];
+            let __line_tokens = [];
             /* split line into tokens */
             line.split(" ").forEach((token) => {
                 /* if token is not #md token,
                  * just add it and continue */
                 if (!token.startsWith(Parser.TOKEN)) {
-                    __line.push(token);
+                    __line_tokens.push(token);
                     return;
                 }
 
-                __line.push(this.parseToken(token));
+                __line_tokens.push(this.parseToken(token));
             });
             /* put line back properly */
-            __blob += __line.join(" ") + "\n";
+            __blob += __line_tokens.join(" ") + "\n";
         });
         this.blob = __blob;
         if (callback) {
@@ -138,7 +166,7 @@ class Parser {
                 return ret;
 
             case "maketoc":
-                return "/* TODO: MAKE TOC */";
+                return "POSTTASK:TOC";
 
             default:
                 break;
@@ -146,30 +174,85 @@ class Parser {
     }
 
     postprocess(blob) {
+        if (clargs.verbose || clargs.debug) {
+            console.log("beginning preprocess")
+        }
+        let __blob = "";
+        const lines = blob.split("\n");
+
+        lines.forEach((line) => {
+            let __line_tokens = [];
+            line.split(" ").forEach((token) => {
+                // only look 
+                if (token.startsWith("POST")) {
+                    if (clargs.verbose || clargs.debug) {
+                        console.log("found postprocess token: ", token);
+                    }
+                    token = this.postprocessParseToken(token);
+                }
+                __line_tokens.push(token)
+            })
+            __blob += __line_tokens.join(" ") + "\n";
+        })
+        return __blob;
+    }
+
+    postprocessParseToken(token) {
+        let type = token.split(":")[0].slice(4);
+        let valu = token.split(":")[1];
+
+        switch (type) {
+            case "TASK":
+                let task = valu;
+                switch (task) {
+                    case "TOC":
+                        let toc = this.gen_toc();
+                        return toc;
+                
+                    default:
+                        break;
+                }
+                break;
+        
+            default:
+                break;
+        }
+    }
+
+    gen_toc() {
+        let __blob = [];
+        const beg = "└"
+        const hor = "─"
+
+        this.opts.secs.forEach( (sec) => {
+            let __line = " ".repeat(sec.level - 1) + beg + " " + sec.title;
+            __blob.push(__line);
+        })
+        return __blob.join("\n");
+
+    }
+
+    remove_double_blank_lines(blob) {
         const lines = blob.split("\n");
         let fixed_lines = [];
-        let flag = 0;
+        let flag = false;
+
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
             if (line) {
                 fixed_lines.push(line);
-                flag = 0;
+                flag = false;
             } else {
                 if (flag) {
                     i++;
                 } else {
                     fixed_lines.push(line);
-                    flag = 1;
+                    flag = true;   
                 }
             }
         }
-        for (let i = 0; i < fixed_lines.length; i++) {
-            const line = fixed_lines[i];
-            if (!line) {
-                fixed_lines[i] = "\n";
-            }
-        }
-        return fixed_lines.join("").trim();
+        
+        return fixed_lines.join("\n").trim();
     }
 
     /* output the parsed document to bundle */
@@ -181,7 +264,10 @@ class Parser {
         }
         this.get((blob) => {
             /* apply postprocess */
-
+            blob = this.postprocess(blob);
+            
+            /* remove double empty lines */
+            blob = this.remove_double_blank_lines(blob);
             fs.writeFile(bundle, blob, () => {
                 console.log("Compiled " + bundle);
             });
@@ -208,13 +294,12 @@ class Parser {
 
 /* main entrypoint */
 if (require.main === module) {
-
     /* incase source is a directory, look for main.md in directory */
     if (fs.existsSync(clargs.src) && fs.lstatSync(clargs.src).isDirectory()) {
         clargs.src = path.join(clargs.src, clargs.entry);
     }
     if (!fs.existsSync(clargs.src)) {
-        throw new Error(`Could not find ${clargs.src}!`)
+        throw new Error(`Could not find ${clargs.src}!`);
     }
 
     const blob = new Parser(clargs.src);
