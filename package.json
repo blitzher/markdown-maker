@@ -1,6 +1,6 @@
 {
     "name": "dnd-markdown",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "",
     "bin": {
         "dnd-markdown": "parse.js"
@@ -18,15 +18,13 @@
     "scripts": {
         "test": "node parse.js --debug test/main.md -o dist/bundle_t.md",
         "main": "node parse.js document/main.md -o dist/bundle.md",
-        "build": "pkg --output build/mdparse .",
+        "build": "pkg --output bin/mdparse .",
         "clear": "rm -rf dist"
     },
     "keywords": [],
     "author": "blitzher",
     "license": "MIT",
     "dependencies": {
-        "argparse": "^2.0.1",
-        "markdown-pdf": "^10.0.0",
-        "monk": "^7.3.2"
+        "argparse": "^2.0.1"
     }
 }
