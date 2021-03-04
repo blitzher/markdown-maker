@@ -1,14 +1,15 @@
 {
     "name": "dnd-markdown",
-    "version": "1.2.0",
+    "version": "1.2.5",
     "description": "",
+    "main": "src/parse.js",
     "bin": {
-        "dnd-markdown": "parse.js"
+        "parse": "src/parse.js"
     },
     "pkg": {
         "assets": [
             "node_modules/**/*",
-            "parse.js"
+            "src/parse.js"
         ],
         "targets": [
             "node12-macos-x64",
@@ -16,8 +17,8 @@
         ]
     },
     "scripts": {
-        "test": "node parse.js --debug test/main.md -o dist/bundle_t.md",
-        "main": "node parse.js document/main.md -o dist/bundle.md",
+        "test": "node src/parse.js --debug test/main.md -o dist/bundle_t.md",
+        "main": "node src/parse.js document/main.md -o dist/bundle.md",
         "build": "pkg --output bin/mdparse .",
         "clear": "rm -rf dist"
     },
@@ -25,6 +26,7 @@
     "author": "blitzher",
     "license": "MIT",
     "dependencies": {
-        "argparse": "^2.0.1"
+        "argparse": "^2.0.1",
+        "colors": "^1.4.0"
     }
 }
