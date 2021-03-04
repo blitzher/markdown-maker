@@ -103,7 +103,8 @@ class Parser {
                 }
 
                 let level = sectionized[0].length
-                let title = line.split(" ").slice(1).join(" ")
+                let title = line.split(" ").slice(1).map(
+                    s => s.startsWith(Parser.TOKEN) ? this.parseToken(s) : s).join(" ");
                 this.opts.secs.push({level, title});
 
                 if (clargs.debug) {

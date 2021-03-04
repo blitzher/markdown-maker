@@ -1,3 +1,3 @@
 ## Smol 2: Electric Bogaloo
 
-Another smol section
+Third smol section

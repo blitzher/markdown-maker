@@ -5,6 +5,7 @@ This program says #mdvar<hello> from the other side!
 ### Table of Contents
 #mdmaketoc<>
 
+# Title
 #mdinclude<lib/other.md>
 
-Other file says #mdvar<hi>
+Main file says #mdvar<hi>
