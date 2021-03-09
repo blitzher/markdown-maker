@@ -42,6 +42,11 @@ argParser.add_argument("-w", "--watch", {
     help:
         "set mdparser to watch for changes\nonly looks for changes in target file/folder.",
 });
+argParser.add_argument("-uu", "--use-underscore", {
+    action: "store_true",
+    help:
+        "set the parser to use '_' as seperator in ids for Table of content. If the links in the table does not work, this is likely to be the issue."
+});
 
 const clargs = argParser.parse_args();
 
@@ -234,11 +239,23 @@ class Parser {
 
     gen_toc() {
         let __blob = [];
-        const beg = "└";
-        const hor = "─";
+        let tabSize = 2;
+        const beg = "* ";
+        const hor = " ".repeat(tabSize);
+        const sep = clargs.use_underscore ? '_' : '-';
+        const stripRegExp = new RegExp('[^\\w' + sep + ']');
+        console.log(stripRegExp);
 
         this.opts.secs.forEach((sec) => {
-            let __line = " ".repeat(sec.level - 1) + beg + " " + sec.title;
+            /* replace special characters by seperator
+               that are not in beginning or end*/
+            let link = `(#${
+                sec.title.replace(/(?:.)\W+(?=.)/g, (m) => `${m[0]}${sep}` ).split(stripRegExp).join("")
+            })`
+            /* strip any remaining special chars from link */ 
+            
+            let __line = hor.repeat(sec.level - 1) + beg +
+                `[${sec.title}]${link}`;
             __blob.push(__line);
         });
         return __blob.join("\n");
@@ -327,19 +344,20 @@ if (require.main === module) {
         compile(clargs.src, clargs.output);
     } else {
         const internalCooldown = 1000;
-
+        
         /* watch the folder of entry */
         const watcher = choki.watch(clargs.src + "/../")
         .on("all", (event, path) => {
             if(!this.time) this.time = Date.now();
-
+            
             const now = Date.now();
             
             if (now - this.time > internalCooldown) {
                 console.log(`Detected change in ${path}...`);
-                compile(clargs.src, clargs.output)
-                this.time = now
+                compile(clargs.src, clargs.output);
+                this.time = now;
             }
         });
+        compile(clargs.src, clargs.output);
     }
 }
