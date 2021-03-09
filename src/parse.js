@@ -244,13 +244,16 @@ class Parser {
         const hor = " ".repeat(tabSize);
         const sep = clargs.use_underscore ? '_' : '-';
         const stripRegExp = new RegExp('[^\\w' + sep + ']');
-        console.log(stripRegExp);
-
+        
         this.opts.secs.forEach((sec) => {
             /* replace special characters by seperator
                that are not in beginning or end*/
             let link = `(#${
-                sec.title.replace(/(?:.)\W+(?=.)/g, (m) => `${m[0]}${sep}` ).split(stripRegExp).join("")
+                sec.title.replace(/(?:.)\W+(?=.)/g, (m) => 
+                `${m[0]}${sep}`)
+                .split(stripRegExp)
+                .join("")
+                .toLowerCase()
             })`
             /* strip any remaining special chars from link */ 
             
