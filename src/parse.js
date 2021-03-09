@@ -47,6 +47,11 @@ argParser.add_argument("-uu", "--use-underscore", {
     help:
         "set the parser to use '_' as seperator in ids for Table of content. If the links in the table does not work, this is likely to be the issue."
 });
+argParser.add_argument("--toc-level", {
+    help: "the section level of the table of contents, by default is 3",
+    default: 3,
+    type: "int",
+});
 
 const clargs = argParser.parse_args();
 
@@ -107,6 +112,9 @@ class Parser {
                 }
 
                 let level = sectionized[0].length;
+                /* implement toc level */
+                if (level > clargs.toc_level) return;
+
                 let title = line
                     .split(" ")
                     .slice(1)
@@ -265,26 +273,9 @@ class Parser {
     }
 
     remove_double_blank_lines(blob) {
-        const lines = blob.split("\n");
-        let fixed_lines = [];
-        let flag = false;
+        blob = blob.replace(/\n{3,}|^\n{2,}|\n{2,}$/g, '\n\n');
 
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-            if (line) {
-                fixed_lines.push(line);
-                flag = false;
-            } else {
-                if (flag) {
-                    i++;
-                } else {
-                    fixed_lines.push(line);
-                    flag = true;
-                }
-            }
-        }
-
-        return fixed_lines.join("\n").trim();
+        return blob
     }
 
     /* output the parsed document to bundle */
