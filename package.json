@@ -1,6 +1,6 @@
 {
     "name": "dnd-markdown",
-    "version": "1.3.4",
+    "version": "1.3.6",
     "description": "",
     "main": "src/parse.js",
     "bin": {
@@ -20,7 +20,10 @@
         "test": "node src/parse.js --debug test/main.md -o dist/bundle_t.md",
         "main": "node src/parse.js document/main.md -o dist/bundle.md",
         "build": "pkg --output bin/mdparse .",
-        "clear": "rm -rf dist"
+        "clear": "rm -rf dist",
+
+        "mac-deploy": "mv bin/mdparse-macos ../commands/mdparse",
+        "premac-deploy" : "npm run build"
     },
     "keywords": [],
     "author": "blitzher",

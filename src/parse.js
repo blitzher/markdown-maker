@@ -45,7 +45,7 @@ argParser.add_argument("-w", "--watch", {
 argParser.add_argument("-uu", "--use-underscore", {
     action: "store_true",
     help:
-        "set the parser to use '_' as seperator in ids for Table of content. If the links in the table does not work, this is likely to be the issue."
+        "set the parser to use '_' as seperator in ids for Table of content. If the links in the table does not work, this is likely to be the issue.",
 });
 argParser.add_argument("--toc-level", {
     help: "the section level of the table of contents, by default is 3",
@@ -91,12 +91,32 @@ class Parser {
                 ("parsing " + this.file + ": depth=" + this.opts.depth).magenta
             );
         }
-        let __blob = "";
-
+        
         const raw = fs.readFileSync(this.file, "utf-8") + "\n";
+        let __blob;
+
+        /* apply preproccessing to raw file */
+        __blob = this.preprocess(raw);
 
         /* main parser instance loop */
-        raw.split("\n").forEach((line, lnum) => {
+        __blob = this.mainparse(__blob);
+
+        /* apply postprocessing after 
+         * main parse is complete     */
+        __blob = this.postprocess(__blob);
+
+        this.blob = __blob;
+        if (callback) {
+            callback(this.blob);
+        }
+        return this.blob;
+    }
+
+    mainparse(blob) {
+        let __blob = ""
+
+        /* main parser instance loop */
+        blob.split("\n").forEach((line, lnum) => {
             this.line_num = lnum;
 
             /* a split version of line, looking like a section title */
@@ -144,11 +164,8 @@ class Parser {
             /* put line back properly */
             __blob += __line_tokens.join(" ") + "\n";
         });
-        this.blob = __blob;
-        if (callback) {
-            callback(this.blob);
-        }
-        return this.blob;
+
+        return __blob;
     }
 
     parseToken(token) {
@@ -176,13 +193,16 @@ class Parser {
                     /* replace underscore with space */
                     return this.opts.defs[name].replace("_", " ");
                 } else {
+                    if (clargs.verbose || clargs.debug) {
+                        console.error(`undefined variable ${name}`.red);
+                    }
                     return "<UNDEFVAR=" + name + ">";
                 }
             case "include":
                 /* recursively import and parse includes */
                 this.opts.depth++;
                 if (this.opts.depth >= Parser.MAX_DEPTH) {
-                    throw new Error("max depth exceeded!");
+                    throw new Error("recursion depth exceeded!");
                 }
 
                 const recParser = new Parser(path.join(this.wd, argument));
@@ -197,6 +217,26 @@ class Parser {
             default:
                 throw SyntaxError(`Unknown token: ${command}`);
         }
+    }
+
+    preprocess(blob) {
+        if (clargs.verbose || clargs.debug) {
+            console.debug("beginning preprocess".blue);
+        }
+        let __blob = "";
+        const lines = blob.split("\n");
+
+        lines.forEach(line => {
+            let __line_tokens = [];
+            line.split(" ").forEach(token => {
+                if (token.match(/(?:\s|^)<\w+>/)) {
+                    token = "#mdvar" + token;
+                }
+                __line_tokens.push(token);
+            });
+            __blob += __line_tokens.join(" ") + "\n";
+        });
+        return __blob;
     }
 
     postprocess(blob) {
@@ -250,32 +290,30 @@ class Parser {
         let tabSize = 2;
         const beg = "* ";
         const hor = " ".repeat(tabSize);
-        const sep = clargs.use_underscore ? '_' : '-';
-        const stripRegExp = new RegExp('[^\\w' + sep + ']');
-        
+        const sep = clargs.use_underscore ? "_" : "-";
+        const stripRegExp = new RegExp("[^\\w" + sep + "]");
+
         this.opts.secs.forEach((sec) => {
             /* replace special characters by seperator
                that are not in beginning or end*/
-            let link = `(#${
-                sec.title.replace(/(?:.)\W+(?=.)/g, (m) => 
-                `${m[0]}${sep}`)
+            let link = `(#${sec.title
+                .replace(/(?:.)\W+(?=.)/g, (m) => `${m[0]}${sep}`)
                 .split(stripRegExp)
                 .join("")
-                .toLowerCase()
-            })`
-            /* strip any remaining special chars from link */ 
-            
-            let __line = hor.repeat(sec.level - 1) + beg +
-                `[${sec.title}]${link}`;
+                .toLowerCase()})`;
+            /* strip any remaining special chars from link */
+
+            let __line =
+                hor.repeat(sec.level - 1) + beg + `[${sec.title}]${link}`;
             __blob.push(__line);
         });
         return __blob.join("\n");
     }
 
     remove_double_blank_lines(blob) {
-        blob = blob.replace(/\n{3,}|^\n{2,}|\n{2,}$/g, '\n\n');
+        blob = blob.replace(/\n{3,}|^\n{2,}|\n{2,}$/g, "\n\n");
 
-        return blob
+        return blob;
     }
 
     /* output the parsed document to bundle */
@@ -286,8 +324,6 @@ class Parser {
             fs.mkdirSync(dir);
         }
         this.get((blob) => {
-            /* apply postprocess */
-            blob = this.postprocess(blob);
 
             /* remove double empty lines */
             blob = this.remove_double_blank_lines(blob);
@@ -309,7 +345,7 @@ class Parser {
                 return blob;
             } catch (error) {
                 console.error(
-                    `ERR: Line ${this.line_num + 1} in ./${this.file}`
+                    `ERR: Line ${this.line_num + 1} in ./${this.file}: ${error.message}`
                 );
                 if (clargs.debug) {
                     console.error(error);
@@ -338,20 +374,21 @@ if (require.main === module) {
         compile(clargs.src, clargs.output);
     } else {
         const internalCooldown = 1000;
-        
+
         /* watch the folder of entry */
-        const watcher = choki.watch(clargs.src + "/../")
-        .on("all", (event, path) => {
-            if(!this.time) this.time = Date.now();
-            
-            const now = Date.now();
-            
-            if (now - this.time > internalCooldown) {
-                console.log(`Detected change in ${path}...`);
-                compile(clargs.src, clargs.output);
-                this.time = now;
-            }
-        });
+        const watcher = choki
+            .watch(clargs.src + "/../")
+            .on("all", (event, path) => {
+                if (!this.time) this.time = Date.now();
+
+                const now = Date.now();
+
+                if (now - this.time > internalCooldown) {
+                    console.log(`Detected change in ${path}...`);
+                    compile(clargs.src, clargs.output);
+                    this.time = now;
+                }
+            });
         compile(clargs.src, clargs.output);
     }
 }
