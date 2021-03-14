@@ -52,26 +52,20 @@ argParser.add_argument("--toc-level", {
     default: 3,
     type: "int",
 });
-
-const clargs = argParser.parse_args();
-
-if (clargs.debug) {
-    console.dir(argParser.parse_args());
-}
 //#endregion
 
 /* parse some md
  * recursively with extra options */
 class Parser {
     static TOKEN = "#md";
-    static MAX_DEPTH = clargs.max_depth;
+    static getDefaultArgs = argParser.get_default;
 
-    constructor(filename) {
+    constructor(filename, clargs) {
         /* this.working_directory */
         this.file = filename;
+
         this.line_num = 0;
         this.wd = path.dirname(filename);
-        Parser.MAX_DEPTH = clargs.max_depth;
 
         /* finished blob */
         this.blob = undefined;
@@ -82,11 +76,17 @@ class Parser {
             secs: [],
             depth: 0,
         };
+
+        if (!clargs) {
+            clargs = argParser.get_default();
+        }
+        /* append all commandline arguments to this */
+        Object.assign(this.opts, this.clargs)
     }
 
     /* parse */
     parse(callback) {
-        if (clargs.verbose || clargs.debug) {
+        if (this.opts.verbose || this.opts.debug) {
             console.log(
                 ("parsing " + this.file + ": depth=" + this.opts.depth).magenta
             );
@@ -172,7 +172,7 @@ class Parser {
         let command = token.slice(Parser.TOKEN.length, token.indexOf("<"));
         let argument = token.slice(token.indexOf("<") + 1, token.indexOf(">"));
 
-        if (clargs.verbose || clargs.debug) {
+        if (this.opts.verbose || this.opts.debug) {
             console.log(("found token: " + token).yellow);
         }
 
@@ -193,7 +193,7 @@ class Parser {
                     /* replace underscore with space */
                     return this.opts.defs[name].replace("_", " ");
                 } else {
-                    if (clargs.verbose || clargs.debug) {
+                    if (this.opts.verbose || this.opts.debug) {
                         console.error(`undefined variable ${name}`.red);
                     }
                     return "<UNDEFVAR=" + name + ">";
@@ -201,7 +201,7 @@ class Parser {
             case "include":
                 /* recursively import and parse includes */
                 this.opts.depth++;
-                if (this.opts.depth >= Parser.MAX_DEPTH) {
+                if (this.opts.depth >= this.opts.max_depth) {
                     throw new Error("recursion depth exceeded!");
                 }
 
@@ -220,7 +220,7 @@ class Parser {
     }
 
     preprocess(blob) {
-        if (clargs.verbose || clargs.debug) {
+        if (this.opts.verbose || this.opts.debug) {
             console.debug("beginning preprocess".blue);
         }
         let __blob = "";
@@ -240,7 +240,7 @@ class Parser {
     }
 
     postprocess(blob) {
-        if (clargs.verbose || clargs.debug) {
+        if (this.opts.verbose || this.opts.debug) {
             console.debug("beginning postprocess".blue);
         }
         let __blob = "";
@@ -251,7 +251,7 @@ class Parser {
             line.split(" ").forEach((token) => {
                 // only look
                 if (token.startsWith("POST")) {
-                    if (clargs.verbose || clargs.debug) {
+                    if (this.opts.verbose || this.opts.debug) {
                         console.log(("found postprocess token: " + token).blue);
                     }
                     token = this.postprocessParseToken(token);
@@ -260,6 +260,9 @@ class Parser {
             });
             __blob += __line_tokens.join(" ") + "\n";
         });
+
+        /* remove double empty lines */
+        __blob = this.remove_double_blank_lines(__blob);
         return __blob;
     }
 
@@ -290,7 +293,7 @@ class Parser {
         let tabSize = 2;
         const beg = "* ";
         const hor = " ".repeat(tabSize);
-        const sep = clargs.use_underscore ? "_" : "-";
+        const sep = this.opts.use_underscore ? "_" : "-";
         const stripRegExp = new RegExp("[^\\w" + sep + "]");
 
         this.opts.secs.forEach((sec) => {
@@ -324,9 +327,6 @@ class Parser {
             fs.mkdirSync(dir);
         }
         this.get((blob) => {
-
-            /* remove double empty lines */
-            blob = this.remove_double_blank_lines(blob);
             fs.writeFile(bundle, blob, () => {
                 console.log(("Compiled " + bundle).green);
             });
@@ -344,12 +344,9 @@ class Parser {
                 let blob = this.parse(callback);
                 return blob;
             } catch (error) {
-                console.error(
-                    `ERR: Line ${this.line_num + 1} in ./${this.file}: ${error.message}`
-                );
-                if (clargs.debug) {
-                    console.error(error);
-                }
+                error.message = `ERR: Line ${this.line_num + 1} in ./${this.file}: ` + error.message;
+                
+                throw error;
             }
         }
     }
@@ -357,6 +354,11 @@ class Parser {
 
 /* main entrypoint */
 if (require.main === module) {
+    const clargs = argParser.parse_args();
+
+    if (clargs.debug) {
+        console.dir(argParser.parse_args());
+    }
     /* incase source is a directory, look for main.md in directory */
     if (fs.existsSync(clargs.src) && fs.lstatSync(clargs.src).isDirectory()) {
         clargs.src = path.join(clargs.src, clargs.entry);
@@ -367,6 +369,7 @@ if (require.main === module) {
 
     const compile = (s, o) => {
         const blob = new Parser(s);
+        blob.clargs = clargs;
         blob.to(o);
     };
 
@@ -392,3 +395,5 @@ if (require.main === module) {
         compile(clargs.src, clargs.output);
     }
 }
+
+module.exports = Parser

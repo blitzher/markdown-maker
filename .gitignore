@@ -13,8 +13,7 @@ node_modules/
 # local temporaries and executables
 dist
 build/
+test/test.files
 
 # actual document
 # synced via dropbox rather
-document
-bundle.md
