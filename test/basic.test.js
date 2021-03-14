@@ -20,6 +20,10 @@ describe("Basic features", () => {
         util.assert.strictEqual(output, "hello\nthere\n\n");
     });
     it("should make a table of contents", () => {
-        util.put("# ")
+        util.put("# yo\n## bruh\n#mdmaketoc<>", "sample1.md");
+        
+        const output = new util.Parser("test/test.files/sample1.md").get();
+        
+        util.assert.strictEqual(output, "# yo\n## bruh\n* [yo](#yo)\n  * [bruh](#bruh)\n\n");
     });
 });

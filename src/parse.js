@@ -127,13 +127,13 @@ class Parser {
                 sectionized[0][0] === "#" &&
                 sectionized[0].split("#").length - 1 === sectionized[0].length
             ) {
-                if (clargs.verbose || clargs.debug) {
+                if (this.opts.verbose || this.opts.debug) {
                     console.log("found toc element: " + sectionized);
                 }
 
                 let level = sectionized[0].length;
                 /* implement toc level */
-                if (level > clargs.toc_level) return;
+                if (level > this.opts.toc_level) return;
 
                 let title = line
                     .split(" ")
@@ -144,7 +144,7 @@ class Parser {
                     .join(" ");
                 this.opts.secs.push({ level, title });
 
-                if (clargs.debug) {
+                if (this.opts.debug) {
                     console.log("updated sections:", this.opts.secs);
                 }
             }
@@ -368,8 +368,7 @@ if (require.main === module) {
     }
 
     const compile = (s, o) => {
-        const blob = new Parser(s);
-        blob.clargs = clargs;
+        const blob = new Parser(s, clargs);
         blob.to(o);
     };
 
