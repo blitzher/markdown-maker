@@ -12,7 +12,7 @@ node_modules/
 
 # local temporaries and executables
 dist
-build/
+bin/
 test/test.files
 
 # actual document
