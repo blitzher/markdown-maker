@@ -2,18 +2,12 @@ const util = require("./tester.test");
 
 describe("Use variables", () => {
     it('should replace var with the value', () => {
-        util.put("#mddef<hi=yo>\n#mdvar<hi>", "sample1.md");
-        util.put("there", "sample2.md");
-
-        const output = new util.Parser("test/test.files/sample1.md").get();
+        const output = new util.Parser("#mddef<hi=yo>\n#mdvar<hi>").get();
 
         util.assert.strictEqual(output, "\nyo\n\n")
     });
     it('should use variable shorthand', () => {
-        util.put("#mddef<hi=yo>\n<hi>", "sample1.md");
-        util.put("there", "sample2.md");
-
-        const output = new util.Parser("test/test.files/sample1.md").get();
+        const output = new util.Parser("#mddef<hi=yo>\n<hi>").get();
 
         util.assert.strictEqual(output, "\nyo\n\n")
     });
@@ -26,11 +20,14 @@ describe("Use variables", () => {
         util.assert.strictEqual(output, "\nyo\n\n")
     })
     it('should put undefined variable', () => {
-        util.put("<yo>", "sample1.md");
-
-        const output = new util.Parser("test/test.files/sample1.md").get();
+        const output = new util.Parser("<yo>").get();
 
         util.assert.strictEqual(output, "<UNDEFVAR=yo>\n\n");
+    });
+
+    it('should preserve whatever comes after', () => {
+        const output = new util.Parser("#mddef<hi=yo>\n<hi>,").get();
+        util.assert.strictEqual(output, "\nyo,\n\n");
     });
 });
 

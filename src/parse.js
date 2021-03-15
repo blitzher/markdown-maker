@@ -81,7 +81,7 @@ class Parser {
             clargs = argParser.get_default();
         }
         /* append all commandline arguments to this */
-        Object.assign(this.opts, this.clargs)
+        Object.assign(this.opts, clargs)
     }
 
     /* parse */
@@ -92,7 +92,13 @@ class Parser {
             );
         }
         
-        const raw = fs.readFileSync(this.file, "utf-8") + "\n";
+        /* load data from file, if it exists,
+         * otherwise, interpret as string */
+        const raw = fs.existsSync(this.file) ?
+            fs.readFileSync(this.file, "utf-8") + "\n" :
+            this.file;
+
+        
         let __blob;
 
         /* apply preproccessing to raw file */
@@ -191,7 +197,9 @@ class Parser {
                 name = argument;
                 if (Object.keys(this.opts.defs).indexOf(name) > -1) {
                     /* replace underscore with space */
-                    return this.opts.defs[name].replace("_", " ");
+                    const value = this.opts.defs[name].replace("_", " ");
+
+                    return value + token.slice(token.indexOf(">")+1);
                 } else {
                     if (this.opts.verbose || this.opts.debug) {
                         console.error(`undefined variable ${name}`.red);
@@ -362,9 +370,6 @@ if (require.main === module) {
     /* incase source is a directory, look for main.md in directory */
     if (fs.existsSync(clargs.src) && fs.lstatSync(clargs.src).isDirectory()) {
         clargs.src = path.join(clargs.src, clargs.entry);
-    }
-    if (!fs.existsSync(clargs.src)) {
-        throw new Error(`Could not find ${clargs.src}!`);
     }
 
     const compile = (s, o) => {
