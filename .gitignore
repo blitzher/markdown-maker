@@ -11,8 +11,9 @@ node_modules/
 .DS_Store
 
 # local temporaries and executables
-dist
+dist/
 bin/
+tmp/
 test/test.files
 
 # actual document

@@ -2,9 +2,12 @@ const fs = require("fs");
 const choki = require("chokidar");
 const path = require("path");
 
+require("typescript-require");
 const colors = require("colors");
 const { ArgumentParser } = require("argparse");
 const { version } = require("../package.json");
+
+const commands = require("./commands.js");
 
 const argParser = new ArgumentParser({
     description: "Markdown bundler, with extra options",
@@ -129,21 +132,19 @@ class Parser {
             let sectionized = line.trim().split(" ");
 
             /* if all elements are hashes */
-            if (
-                sectionized[0][0] === "#" &&
-                sectionized[0].split("#").length - 1 === sectionized[0].length
-            ) {
-                if (this.opts.verbose || this.opts.debug) {
+            const titleMatch = line.match(/(#+) (\w+)/);
+            if ( titleMatch )
+            {
+                if (this.opts.verbose || this.opts.debug) 
                     console.log("found toc element: " + sectionized);
-                }
 
-                let level = sectionized[0].length;
+
+                let level = titleMatch[1].length;
                 /* implement toc level */
                 if (level > this.opts.toc_level) return;
 
-                let title = line
+                let title = titleMatch[2]
                     .split(" ")
-                    .slice(1)
                     .map((s) =>
                         s.startsWith(Parser.TOKEN) ? this.parseToken(s) : s
                     )
@@ -175,56 +176,20 @@ class Parser {
     }
 
     parseToken(token) {
-        let command = token.slice(Parser.TOKEN.length, token.indexOf("<"));
-        let argument = token.slice(token.indexOf("<") + 1, token.indexOf(">"));
 
-        if (this.opts.verbose || this.opts.debug) {
-            console.log(("found token: " + token).yellow);
-        }
+        /* iterate over all commands,
+         * and if command is valid, execute it */
+        for (let i = 0; i < commands.parse.length; i++) {
+            const command = commands.parse[i];
+            
+            
+            if (command.valid(token, this)) {
+                return command.act(token, this);
+            }
+        } 
 
-        /* switch for handling all commands and
-         * arguments passed to this intermediate
-         * compiler */
-        let name, valu;
-        switch (command) {
-            case "def":
-                name = argument.split("=")[0];
-                valu = argument.split("=")[1];
-                this.opts.defs[name] = valu;
-                return "";
-
-            case "var":
-                name = argument;
-                if (Object.keys(this.opts.defs).indexOf(name) > -1) {
-                    /* replace underscore with space */
-                    const value = this.opts.defs[name].replace("_", " ");
-
-                    return value + token.slice(token.indexOf(">")+1);
-                } else {
-                    if (this.opts.verbose || this.opts.debug) {
-                        console.error(`undefined variable ${name}`.red);
-                    }
-                    return "<UNDEFVAR=" + name + ">";
-                }
-            case "include":
-                /* recursively import and parse includes */
-                this.opts.depth++;
-                if (this.opts.depth >= this.opts.max_depth) {
-                    throw new Error("recursion depth exceeded!");
-                }
-
-                const recParser = new Parser(path.join(this.wd, argument));
-                recParser.opts = this.opts;
-                const ret = recParser.get();
-                this.opts.depth--;
-                return ret;
-
-            case "maketoc":
-                return "POSTTASK:TOC";
-
-            default:
-                throw SyntaxError(`Unknown token: ${command}`);
-        }
+        throw SyntaxError(`Unknown token: ${token}`);
+        
     }
 
     preprocess(blob) {
@@ -237,9 +202,13 @@ class Parser {
         lines.forEach(line => {
             let __line_tokens = [];
             line.split(" ").forEach(token => {
-                if (token.match(/(?:\s|^)<\w+>/)) {
-                    token = "#mdvar" + token;
+
+                for (const command of commands.preparse) {
+                    if (command.valid(token, this)) {
+                        token = command.act(token, this);
+                    }
                 }
+                
                 __line_tokens.push(token);
             });
             __blob += __line_tokens.join(" ") + "\n";
@@ -258,12 +227,13 @@ class Parser {
             let __line_tokens = [];
             line.split(" ").forEach((token) => {
                 // only look
-                if (token.startsWith("POST")) {
-                    if (this.opts.verbose || this.opts.debug) {
-                        console.log(("found postprocess token: " + token).blue);
+                
+                for (const command of commands.postparse) {
+                    if (command.valid(token, this)) {
+                        token = command.act(token, this);
                     }
-                    token = this.postprocessParseToken(token);
                 }
+
                 __line_tokens.push(token);
             });
             __blob += __line_tokens.join(" ") + "\n";
@@ -274,27 +244,6 @@ class Parser {
         return __blob;
     }
 
-    postprocessParseToken(token) {
-        let type = token.split(":")[0].slice(4);
-        let valu = token.split(":")[1];
-
-        switch (type) {
-            case "TASK":
-                let task = valu;
-                switch (task) {
-                    case "TOC":
-                        let toc = this.gen_toc();
-                        return toc;
-
-                    default:
-                        break;
-                }
-                break;
-
-            default:
-                break;
-        }
-    }
 
     gen_toc() {
         let __blob = [];

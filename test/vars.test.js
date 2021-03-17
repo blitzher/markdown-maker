@@ -22,7 +22,7 @@ describe("Use variables", () => {
     it('should put undefined variable', () => {
         const output = new util.Parser("<yo>").get();
 
-        util.assert.strictEqual(output, "<UNDEFVAR=yo>\n\n");
+        util.assert.strictEqual(output, "<UDEF=yo>\n\n");
     });
 
     it('should preserve whatever comes after', () => {
