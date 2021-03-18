@@ -2,7 +2,6 @@ const fs = require("fs");
 const choki = require("chokidar");
 const path = require("path");
 
-require("typescript-require");
 const colors = require("colors");
 const { ArgumentParser } = require("argparse");
 const { version } = require("../package.json");
@@ -43,12 +42,12 @@ argParser.add_argument("-e", "--entry", {
 argParser.add_argument("-w", "--watch", {
     action: "store_true",
     help:
-        "set mdparser to watch for changes\nonly looks for changes in target file/folder.",
+        "recompile after a change in target target file or directory.",
 });
 argParser.add_argument("-uu", "--use-underscore", {
     action: "store_true",
     help:
-        "set the parser to use '_' as seperator in ids for Table of content. If the links in the table does not work, this is likely to be the issue.",
+        "set the parser to use '_' as seperator in ids for Table of Content. If the links in the table does not work, this is likely to be the issue.",
 });
 argParser.add_argument("--toc-level", {
     help: "the section level of the table of contents, by default is 3",
@@ -87,7 +86,10 @@ class Parser {
         Object.assign(this.opts, clargs)
     }
 
-    /* parse */
+    /**
+     * parse wrapper for handling
+     * preprocessing, parsing and postprocess
+     **/
     parse(callback) {
         if (this.opts.verbose || this.opts.debug) {
             console.log(
@@ -95,12 +97,12 @@ class Parser {
             );
         }
         
-        /* load data from file, if it exists,
+        /**
+         * load data from file, if it exists,
          * otherwise, interpret as string */
         const raw = fs.existsSync(this.file) ?
             fs.readFileSync(this.file, "utf-8") + "\n" :
             this.file;
-
         
         let __blob;
 
@@ -110,7 +112,8 @@ class Parser {
         /* main parser instance loop */
         __blob = this.mainparse(__blob);
 
-        /* apply postprocessing after 
+        /**
+         * apply postprocessing after 
          * main parse is complete     */
         __blob = this.postprocess(__blob);
 
@@ -131,18 +134,21 @@ class Parser {
             /* a split version of line, looking like a section title */
             let sectionized = line.trim().split(" ");
 
-            /* if all elements are hashes */
+            /* if line looks like a title */
             const titleMatch = line.match(/(#+) (\w+)/);
             if ( titleMatch )
             {
                 if (this.opts.verbose || this.opts.debug) 
                     console.log("found toc element: " + sectionized);
 
-
-                let level = titleMatch[1].length;
                 /* implement toc level */
+                let level = titleMatch[1].length;
                 if (level > this.opts.toc_level) return;
 
+                /**
+                 * parse elements of title
+                 * such as variables
+                 */
                 let title = titleMatch[2]
                     .split(" ")
                     .map((s) =>
@@ -161,12 +167,11 @@ class Parser {
             line.split(" ").forEach((token) => {
                 /* if token is not #md token,
                  * just add it and continue */
-                if (!token.startsWith(Parser.TOKEN)) {
-                    __line_tokens.push(token);
-                    return;
+                if (token.startsWith(Parser.TOKEN)) {
+                    token = this.parseToken(token);
                 }
 
-                __line_tokens.push(this.parseToken(token));
+                __line_tokens.push((token));
             });
             /* put line back properly */
             __blob += __line_tokens.join(" ") + "\n";
@@ -316,11 +321,12 @@ if (require.main === module) {
     if (clargs.debug) {
         console.dir(argParser.parse_args());
     }
-    /* incase source is a directory, look for main.md in directory */
+    /* in case source is a directory, look for main.md in directory */
     if (fs.existsSync(clargs.src) && fs.lstatSync(clargs.src).isDirectory()) {
         clargs.src = path.join(clargs.src, clargs.entry);
     }
 
+    /* helper method for calling parser */
     const compile = (s, o) => {
         const blob = new Parser(s, clargs);
         blob.to(o);

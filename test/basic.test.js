@@ -9,7 +9,7 @@ describe("Basic features", () => {
             SyntaxError
         )
     });
-    it("should join the files with include", () => {
+    it("should join two files with include", () => {
         util.put("hello\n#mdinclude<sample2.md>", "sample1.md");
         util.put("there", "sample2.md");
 
