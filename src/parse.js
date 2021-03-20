@@ -41,8 +41,7 @@ argParser.add_argument("-e", "--entry", {
 });
 argParser.add_argument("-w", "--watch", {
     action: "store_true",
-    help:
-        "recompile after a change in target target file or directory.",
+    help: "recompile after a change in target target file or directory.",
 });
 argParser.add_argument("-uu", "--use-underscore", {
     action: "store_true",
@@ -62,9 +61,13 @@ class Parser {
     static TOKEN = "#md";
     static getDefaultArgs = argParser.get_default;
 
-    constructor(filename, clargs) {
+    constructor(filename, clargs, parent) {
         /* this.working_directory */
         this.file = filename;
+
+        /* the parent parser */
+        this.parent = parent;
+        
 
         this.line_num = 0;
         this.wd = path.dirname(filename);
@@ -82,8 +85,9 @@ class Parser {
         if (!clargs) {
             clargs = argParser.get_default();
         }
+
         /* append all commandline arguments to this */
-        Object.assign(this.opts, clargs)
+        Object.assign(this.opts, clargs);
     }
 
     /**
@@ -96,14 +100,14 @@ class Parser {
                 ("parsing " + this.file + ": depth=" + this.opts.depth).magenta
             );
         }
-        
+
         /**
          * load data from file, if it exists,
          * otherwise, interpret as string */
-        const raw = fs.existsSync(this.file) ?
-            fs.readFileSync(this.file, "utf-8") + "\n" :
-            this.file;
-        
+        const raw = fs.existsSync(this.file)
+            ? fs.readFileSync(this.file, "utf-8") + "\n"
+            : this.file;
+
         let __blob;
 
         /* apply preproccessing to raw file */
@@ -113,7 +117,7 @@ class Parser {
         __blob = this.mainparse(__blob);
 
         /**
-         * apply postprocessing after 
+         * apply postprocessing after
          * main parse is complete     */
         __blob = this.postprocess(__blob);
 
@@ -125,7 +129,7 @@ class Parser {
     }
 
     mainparse(blob) {
-        let __blob = ""
+        let __blob = "";
 
         /* main parser instance loop */
         blob.split("\n").forEach((line, lnum) => {
@@ -136,9 +140,8 @@ class Parser {
 
             /* if line looks like a title */
             const titleMatch = line.match(/(#+) (\w+)/);
-            if ( titleMatch )
-            {
-                if (this.opts.verbose || this.opts.debug) 
+            if (titleMatch) {
+                if (this.opts.verbose || this.opts.debug)
                     console.log("found toc element: " + sectionized);
 
                 /* implement toc level */
@@ -171,7 +174,7 @@ class Parser {
                     token = this.parseToken(token);
                 }
 
-                __line_tokens.push((token));
+                __line_tokens.push(token);
             });
             /* put line back properly */
             __blob += __line_tokens.join(" ") + "\n";
@@ -181,20 +184,21 @@ class Parser {
     }
 
     parseToken(token) {
-
         /* iterate over all commands,
          * and if command is valid, execute it */
+
+        if (this.opts.verbose || this.opts.debug)
+            console.log("found mdtoken: " + token);
+
         for (let i = 0; i < commands.parse.length; i++) {
             const command = commands.parse[i];
-            
-            
+
             if (command.valid(token, this)) {
                 return command.act(token, this);
             }
-        } 
+        }
 
         throw SyntaxError(`Unknown token: ${token}`);
-        
     }
 
     preprocess(blob) {
@@ -204,16 +208,15 @@ class Parser {
         let __blob = "";
         const lines = blob.split("\n");
 
-        lines.forEach(line => {
+        lines.forEach((line) => {
             let __line_tokens = [];
-            line.split(" ").forEach(token => {
-
+            line.split(" ").forEach((token) => {
                 for (const command of commands.preparse) {
                     if (command.valid(token, this)) {
                         token = command.act(token, this);
                     }
                 }
-                
+
                 __line_tokens.push(token);
             });
             __blob += __line_tokens.join(" ") + "\n";
@@ -232,7 +235,7 @@ class Parser {
             let __line_tokens = [];
             line.split(" ").forEach((token) => {
                 // only look
-                
+
                 for (const command of commands.postparse) {
                     if (command.valid(token, this)) {
                         token = command.act(token, this);
@@ -248,7 +251,6 @@ class Parser {
         __blob = this.remove_double_blank_lines(__blob);
         return __blob;
     }
-
 
     gen_toc() {
         let __blob = [];
@@ -306,7 +308,17 @@ class Parser {
                 let blob = this.parse(callback);
                 return blob;
             } catch (error) {
-                error.message = `ERR: Line ${this.line_num + 1} in ./${this.file}: ` + error.message;
+                
+
+                let traceback = "";
+                let p = this;
+                do {
+                    traceback += `\n...on line ${p.line_num + 1} in ${p.file}`.gray;
+                    if (p.parent)
+                        p = p.parent;
+                } while (p.parent);
+                out:
+                error.message += traceback
                 
                 throw error;
             }
@@ -355,4 +367,4 @@ if (require.main === module) {
     }
 }
 
-module.exports = Parser
+module.exports = Parser;

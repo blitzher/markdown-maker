@@ -83,10 +83,12 @@ new Command(
 
         /* get the matching group */
         const name = t.match(/^#mdinclude<([\w.]+)>/)[1];
-        const recursiveParser = new Parser(path.join(p.wd, name));
+        const recursiveParser = new Parser(path.join(p.wd, name), p.opts, p);
 
         /* keep the options the same */
         recursiveParser.opts = p.opts;
+        recursiveParser.parent = p;
+
         const blob = recursiveParser.get();
         p.opts.depth --;
         return blob;
