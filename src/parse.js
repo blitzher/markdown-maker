@@ -317,7 +317,7 @@ class Parser {
                     if (p.parent)
                         p = p.parent;
                 } while (p.parent);
-                out:
+                
                 error.message += traceback
                 
                 throw error;
