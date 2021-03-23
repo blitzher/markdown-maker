@@ -70,7 +70,7 @@ new Command(
 /** mdinclude */
 new Command(
     CommandType.PARSE,
-    (t, p) => t.match(/^#mdinclude<([\w.]+)>/),
+    (t, p) => t.match(/^#mdinclude<([\w.\/-]+)>/),
     (t, p) => {
 
         const Parser = require("./parse");
@@ -82,7 +82,7 @@ new Command(
         }
 
         /* get the matching group */
-        const name = t.match(/^#mdinclude<([\w.]+)>/)[1];
+        const name = t.match(/^#mdinclude<([\w.\/-]+)>/)[1];
         const recursiveParser = new Parser(path.join(p.wd, name), p.opts, p);
 
         /* keep the options the same */
