@@ -67,7 +67,6 @@ class Parser {
 
         /* the parent parser */
         this.parent = parent;
-        
 
         this.line_num = 0;
         this.wd = path.dirname(filename);
@@ -308,23 +307,27 @@ class Parser {
                 let blob = this.parse(callback);
                 return blob;
             } catch (error) {
-                
 
                 let traceback = "";
                 let p = this;
                 do {
-                    traceback += `\n...on line ${p.line_num + 1} in ${p.file}`.gray;
-                    if (p.parent)
-                        p = p.parent;
+                    traceback += `\n...on line ${p.line_num + 1} in ${p.file}`
+                        .gray;
+                    if (p.parent) p = p.parent;
                 } while (p.parent);
-                
-                error.message += traceback
-                
+
+                error.message += traceback;
+
+                /* only interested in stacktrace, when debugging */
+                if (!this.opts.debug) error.stack = "";
+
                 throw error;
             }
         }
     }
 }
+
+module.exports = Parser;
 
 /* main entrypoint */
 if (require.main === module) {
@@ -359,12 +362,20 @@ if (require.main === module) {
 
                 if (now - this.time > internalCooldown) {
                     console.log(`Detected change in ${path}...`);
-                    compile(clargs.src, clargs.output);
+
+                    try {
+                        compile(clargs.src, clargs.output);
+                    } catch (e) {
+                        console.log(e.message);
+                    }
+
                     this.time = now;
                 }
             });
-        compile(clargs.src, clargs.output);
+        try {
+            compile(clargs.src, clargs.output);
+        } catch (e) {
+            console.log(e.message);
+        }
     }
 }
-
-module.exports = Parser;
