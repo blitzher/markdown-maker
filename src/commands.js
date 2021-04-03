@@ -63,7 +63,7 @@ new Command(
     (t, p) => {
         const match = t.match(/#mdvar<(\w+)>/);
         const value = p.opts.defs[match[1]] || `<UDEF=${match[1]}>`;
-        return t.replace(match[0], value)
+        return t.replace(match[0], value.replace("_", " "));
     },
 );
 

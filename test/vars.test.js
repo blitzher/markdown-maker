@@ -29,6 +29,13 @@ describe("Use variables", () => {
         const output = new util.Parser("#mddef<hi=yo>\n<hi>,").get();
         util.assert.strictEqual(output, "\nyo,\n\n");
     });
+
+    it('should replace underscore with space', () => {
+        const output = new util.Parser("#mddef<name=Mr_Sir>\n#mdvar<name>").get();
+
+        util.assert.strictEqual(output, "\nMr Sir\n\n")
+    });
+
 });
 
 
