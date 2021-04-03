@@ -19,9 +19,9 @@ describe("Basic features", () => {
         util.assert.strictEqual(output, "hello\nthere\n\n");
     });
     it("should make a table of contents", () => {
-        const output = new util.Parser("# yo\n## bruh\n#mdmaketoc").get();
+        const output = new util.Parser("# yo\n## bruh nugget\n#mdmaketoc").get();
         
-        util.assert.strictEqual(output, "# yo\n## bruh\n* [yo](#yo)\n  * [bruh](#bruh)\n\n");
+        util.assert.strictEqual(output, "# yo\n## bruh nugget\n* [yo](#yo)\n  * [bruh nugget](#bruh-nugget)\n\n");
     });
     it("should not exceed max include depth", () => {
         util.put("#mdinclude<sample2.md>", "sample1.md");

@@ -138,7 +138,7 @@ class Parser {
             let sectionized = line.trim().split(" ");
 
             /* if line looks like a title */
-            const titleMatch = line.match(/(#+) (\w+)/);
+            const titleMatch = line.match(/(#+) ([\w_.\s]+)/);
             if (titleMatch) {
                 if (this.opts.verbose || this.opts.debug)
                     console.log("found toc element: " + sectionized);
