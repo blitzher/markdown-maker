@@ -23,6 +23,11 @@ describe("Basic features", () => {
         
         util.assert.strictEqual(output, "# yo\n## bruh nugget\n* [yo](#yo)\n  * [bruh nugget](#bruh-nugget)\n\n");
     });
+    it("should allow variables in toc", () => {
+        const parser = new util.Parser("#mddef<name=Foobar>\n# mr. #mdvar<name>\n#mdmaketoc");
+        
+        util.assert.strictEqual(parser.get(), "\n# mr. Foobar\n* [mr. Foobar](#mr-foobar)\n\n");
+    });
     it("should not exceed max include depth", () => {
         util.put("#mdinclude<sample2.md>", "sample1.md");
         util.put("yo.md>", "sample2.md");

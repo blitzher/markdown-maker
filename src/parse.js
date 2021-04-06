@@ -138,7 +138,7 @@ class Parser {
             let sectionized = line.trim().split(" ");
 
             /* if line looks like a title */
-            const titleMatch = line.match(/(#+) ([\w_.\s]+)/);
+            const titleMatch = line.match(/^(#+) ([.\w_\s><#]+)$/);
             if (titleMatch) {
                 if (this.opts.verbose || this.opts.debug)
                     console.log("found toc element: " + sectionized);
@@ -151,12 +151,15 @@ class Parser {
                  * parse elements of title
                  * such as variables
                  */
+                console.log(titleMatch);
                 let title = titleMatch[2]
-                    .split(" ")
-                    .map((s) =>
-                        s.startsWith(Parser.TOKEN) ? this.parseToken(s) : s
-                    )
-                    .join(" ");
+                .split(" ")
+                .map((s) =>
+                s.startsWith(Parser.TOKEN) 
+                ? this.parseToken(s) 
+                : s
+                )
+                .join(" ");
                 this.opts.secs.push({ level, title });
 
                 if (this.opts.debug) {
