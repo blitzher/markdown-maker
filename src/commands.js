@@ -88,8 +88,12 @@ new Command(
         /* keep the options the same */
         recursiveParser.opts = p.opts;
         recursiveParser.parent = p;
+        
+        const _fileNameArr = recursiveParser.file.split(".")
+        const fileType = _fileNameArr[_fileNameArr.length - 1];
+        
+        const blob = (fileType === 'md') ? recursiveParser.get() : recursiveParser.raw;
 
-        const blob = recursiveParser.get();
         p.opts.depth --;
         return blob;
     }

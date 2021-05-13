@@ -1,10 +1,13 @@
-const fs = require("fs");
-const choki = require("chokidar");
-const path = require("path");
+const fs = require("fs"); /* for handling reading of files */
+const choki = require("chokidar"); /* for handling file watching */
+const path = require("path"); /* for handling file paths */
 
-const colors = require("colors");
-const { ArgumentParser } = require("argparse");
-const { version } = require("../package.json");
+const colors = require("colors"); /* for adding colours to strings */
+const { ArgumentParser } = require("argparse"); /* for parsing clargs */
+const { version } = require("../package.json"); /* package version number */
+const opn = require("open");
+const marked = require("marked");
+
 
 const commands = require("./commands.js");
 
@@ -53,6 +56,14 @@ argParser.add_argument("--toc-level", {
     default: 3,
     type: "int",
 });
+argParser.add_argument("--html", {
+    action: "store_true",
+    help: "compile HTML from the parsed markdown",
+});
+argParser.add_argument("--preview", "-p", {
+    action: "store_true",
+    help: "preview the file in a browser",
+});
 //#endregion
 
 /* parse some md
@@ -85,6 +96,12 @@ class Parser {
             clargs = argParser.get_default();
         }
 
+        /* load data from file, if it exists,
+         * otherwise, interpret as string */
+        this.raw = fs.existsSync(this.file)
+           ? fs.readFileSync(this.file, "utf-8") + "\n"
+           : this.file;
+
         /* append all commandline arguments to this */
         Object.assign(this.opts, clargs);
     }
@@ -100,17 +117,10 @@ class Parser {
             );
         }
 
-        /**
-         * load data from file, if it exists,
-         * otherwise, interpret as string */
-        const raw = fs.existsSync(this.file)
-            ? fs.readFileSync(this.file, "utf-8") + "\n"
-            : this.file;
-
         let __blob;
 
         /* apply preproccessing to raw file */
-        __blob = this.preprocess(raw);
+        __blob = this.preprocess(this.raw);
 
         /* main parser instance loop */
         __blob = this.mainparse(__blob);
@@ -151,7 +161,6 @@ class Parser {
                  * parse elements of title
                  * such as variables
                  */
-                console.log(titleMatch);
                 let title = titleMatch[2]
                 .split(" ")
                 .map((s) =>
@@ -346,12 +355,18 @@ if (require.main === module) {
 
     /* helper method for calling parser */
     const compile = (s, o) => {
-        const blob = new Parser(s, clargs);
-        blob.to(o);
+        const parser = new Parser(s, clargs);
+        parser.to(o);
+        if (clargs.html) {
+            const htmlFormatted = marked(parser.get())
+            fs.writeFile(clargs.output.replace(".md", ".html"), htmlFormatted, (e) => {});
+        }
+        return parser;
     };
 
+    let parser;
     if (!clargs.watch) {
-        compile(clargs.src, clargs.output);
+        parser = compile(clargs.src, clargs.output);
     } else {
         const internalCooldown = 1000;
 
@@ -376,7 +391,7 @@ if (require.main === module) {
                 }
             });
         try {
-            compile(clargs.src, clargs.output);
+            parser = compile(clargs.src, clargs.output);
         } catch (e) {
             console.log(e.message);
         }
