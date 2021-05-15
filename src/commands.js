@@ -62,7 +62,8 @@ new Command(
     (t, p) => t.match(/^#mdvar<(\w+)>/) || t.match(/^<(\w+)>/),
     (t, p) => {
         const match = t.match(/#mdvar<(\w+)>/);
-        const value = p.opts.defs[match[1]] || `<UDEF=${match[1]}>`;
+        const repl = (p.opts.allow_undef) ? `<${match[1]}>` : `<UDEF=${match[1]}>`;
+        const value = p.opts.defs[match[1]] || repl;
         return t.replace(match[0], value.replace("_", " "));
     },
 );
@@ -112,6 +113,6 @@ new Command(
     (t, p) => p.gen_toc(),
 );
 
-/* mdvar */
+
 module.exports = commands;
 

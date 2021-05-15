@@ -4,7 +4,7 @@ describe("Error handling", () => {
     it("should provide basic traceback", () => {
         util.put("hi there\n\n\n#mdNON\n\n", "sample1.md");
 
-        const parser = new util.Parser("test/test.files/sample1.md");
+        const parser = new util.Parser("test/test-files/sample1.md");
 
         let e;
         /* should throw an error */
@@ -27,7 +27,7 @@ describe("Error handling", () => {
         util.assert.strictEqual(
             e.message,
             "Unknown token: #mdNON" + 
-            "\n...on line 4 in test/test.files/sample1.md".grey
+            "\n...on line 4 in test/test-files/sample1.md".grey
         )
 
     });
@@ -35,7 +35,7 @@ describe("Error handling", () => {
         util.put("\n#mdinclude<sample2.md>", "sample1.md");
         util.put("#mdNON", "sample2.md");
 
-        const parser = new util.Parser("test/test.files/sample1.md");
+        const parser = new util.Parser("test/test-files/sample1.md");
 
         let e;
 
@@ -58,8 +58,8 @@ describe("Error handling", () => {
         util.assert.strictEqual(
             e.message,
             "Unknown token: #mdNON" +
-                "\n...on line 1 in test/test.files/sample2.md".grey +
-                "\n...on line 2 in test/test.files/sample1.md".grey
+                "\n...on line 1 in test/test-files/sample2.md".grey +
+                "\n...on line 2 in test/test-files/sample1.md".grey
         );
     });
 });

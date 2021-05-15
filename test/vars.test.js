@@ -15,7 +15,7 @@ describe("Use variables", () => {
         util.put("#mddef<hi=yo>\n#mdinclude<sample2.md>", "sample1.md");
         util.put("<hi>", "sample2.md");
         
-        const output = new util.Parser("test/test.files/sample1.md").get();
+        const output = new util.Parser("test/test-files/sample1.md").get();
 
         util.assert.strictEqual(output, "\nyo\n\n")
     })

@@ -13,7 +13,7 @@ describe("Basic features", () => {
         util.put("hello\n#mdinclude<sample2.md>", "sample1.md");
         util.put("there", "sample2.md");
 
-        const parser = new util.Parser("test/test.files/sample1.md");
+        const parser = new util.Parser("test/test-files/sample1.md");
         const output = parser.get();
 
         util.assert.strictEqual(output, "hello\nthere\n\n");
@@ -22,6 +22,11 @@ describe("Basic features", () => {
         const output = new util.Parser("# yo\n## bruh nugget\n#mdmaketoc").get();
         
         util.assert.strictEqual(output, "# yo\n## bruh nugget\n* [yo](#yo)\n  * [bruh nugget](#bruh-nugget)\n\n");
+    });
+    it("should allow quotation marks in titles for toc", () => {
+        const output = new util.Parser("# mac's farm\n#mdmaketoc").get();
+
+        util.assert.strictEqual(output, "# mac's farm\n* [mac's farm](#mac-s-farm)\n\n")
     });
     it("should allow variables in toc", () => {
         const parser = new util.Parser("#mddef<name=Foobar>\n# mr. #mdvar<name>\n#mdmaketoc");
@@ -34,7 +39,7 @@ describe("Basic features", () => {
 
         util.assert.throws(
             () => {
-                const parser = new util.Parser("test/test.files/sample1.md");
+                const parser = new util.Parser("test/test-files/sample1.md");
                 parser.opts.max_depth = 0;
                 parser.get();
             },

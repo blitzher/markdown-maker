@@ -2,24 +2,27 @@
 
 [![Mocha](https://github.com/blitzher/markdown-maker/actions/workflows/node.js.yml/badge.svg)](https://github.com/blitzher/markdown-maker/actions/workflows/node.js.yml)
 
-## Features
-
 A node parser for markdown variables and including of files.
 It is intended as a simplistic replacement for TeX documents, primarily for writing stories, D&D campaigns or other similar text based works.
+
+## Features
+
 
 Currently supports the following features
 * Defining variables with `#mddef<name=value>` and retrieving of values with `#mdvar<name>`, or simply `<name>`
 * Including and parsing other files, preserving all defined variables, with `mdinclude<filename.md>`
-* Automatic Table of Contents generation
-* Easy extention of custom commands
+* Automatic Table of Contents generation with `#mdmaketoc`
+* HTML emitting with custom styling
+* Easy extention of custom commands, see `src/commands.js` for implementations
 
 ## Usage
 Download the [latest release](https://github.com/blitzher/markdown-maker/releases), and write your document.
 
+
 When you want to compile your document, use `mdparse <file>` or `mdparse <dir>` to produce `dist/bundle.md`.
 See below for options when compiling.
 
-## Arguments
+## Command Line Arguments
 
 **--use-underscore (-uu)**: 
 Change the id referencing in the Table of Contents to use "\_" instead of "-".
@@ -31,6 +34,22 @@ Enable verbose output
 **--watch (-w)**:
 Watch the target file or directory for changes, and recompile whenever changed.
 
+**--html**
+Emit the compiled HTML to `dist/bundle.html`
+
+To style the document, it is recommended to put `#mdinclude<style.html>` in the head of your `main.md`, and in `style.html`, put
+```html
+<!-- style.html -->
+<style>
+    /* your styles here */
+</style>
+```
+
+**--allow-undef (-au)**
+Allow undefined variables. Instead of putting `<UDEF=VarName>`, put `<VarName>`.
+Useful for allowing infile CSS, code snippets or other situations, where the `<` and `>` symbols are used.
+However, this means that the variable with the same name *must* be undefined, so use only when needed.
+---
 See `mdparse --help` for all arguments and their usage.
 
 

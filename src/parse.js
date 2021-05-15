@@ -1,11 +1,9 @@
 const fs = require("fs"); /* for handling reading of files */
-const choki = require("chokidar"); /* for handling file watching */
 const path = require("path"); /* for handling file paths */
 
-const colors = require("colors"); /* for adding colours to strings */
+require("colors"); /* for adding colours to strings */
 const { ArgumentParser } = require("argparse"); /* for parsing clargs */
 const { version } = require("../package.json"); /* package version number */
-const opn = require("open");
 const marked = require("marked");
 
 
@@ -60,9 +58,9 @@ argParser.add_argument("--html", {
     action: "store_true",
     help: "compile HTML from the parsed markdown",
 });
-argParser.add_argument("--preview", "-p", {
+argParser.add_argument("--allow-undef", "-au", {
     action: "store_true",
-    help: "preview the file in a browser",
+    help: "allow undefined variables. Mostly useful for typing inline html tags, and other non-strictly markdown related uses",
 });
 //#endregion
 
@@ -148,7 +146,7 @@ class Parser {
             let sectionized = line.trim().split(" ");
 
             /* if line looks like a title */
-            const titleMatch = line.match(/^(#+) ([.\w_\s><#]+)$/);
+            const titleMatch = line.match(/^(#+) (.+)$/);
             if (titleMatch) {
                 if (this.opts.verbose || this.opts.debug)
                     console.log("found toc element: " + sectionized);
@@ -295,17 +293,30 @@ class Parser {
     }
 
     /* output the parsed document to bundle */
-    to(bundle) {
+    to(bundle, cb) {
         const dir = path.dirname(bundle);
+        if (!cb) cb = () => {}
 
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir);
         }
         this.get((blob) => {
             fs.writeFile(bundle, blob, () => {
-                console.log(("Compiled " + bundle).green);
+                cb(bundle);
             });
         });
+
+        if(this.opts.html) {
+            const htmlFileName = bundle.replace(".md", ".html")
+            fs.writeFile(htmlFileName, this.html(), () => cb(htmlFileName));
+        }
+    }
+
+    html(bundle) {
+
+        const htmlFormatted = marked(this.get());
+
+        return htmlFormatted;
     }
 
     get(callback) {
@@ -346,9 +357,9 @@ if (require.main === module) {
     const clargs = argParser.parse_args();
 
     if (clargs.debug) {
-        console.dir(argParser.parse_args());
+        console.dir(clargs);
     }
-    /* in case source is a directory, look for main.md in directory */
+    /* in case source is a directory, look for entry in directory */
     if (fs.existsSync(clargs.src) && fs.lstatSync(clargs.src).isDirectory()) {
         clargs.src = path.join(clargs.src, clargs.entry);
     }
@@ -356,42 +367,40 @@ if (require.main === module) {
     /* helper method for calling parser */
     const compile = (s, o) => {
         const parser = new Parser(s, clargs);
-        parser.to(o);
-        if (clargs.html) {
-            const htmlFormatted = marked(parser.get())
-            fs.writeFile(clargs.output.replace(".md", ".html"), htmlFormatted, (e) => {});
-        }
+        parser.to(o, (f) => {console.log(`Compiled ${f}`.green)});
         return parser;
     };
 
-    let parser;
+    
     if (!clargs.watch) {
-        parser = compile(clargs.src, clargs.output);
+        compile(clargs.src, clargs.output);
     } else {
         const internalCooldown = 1000;
+        const srcDirName = path.dirname(clargs.src);
+
 
         /* watch the folder of entry */
-        const watcher = choki
-            .watch(clargs.src + "/../")
-            .on("all", (event, path) => {
-                if (!this.time) this.time = Date.now();
+        console.log(`Watching ${srcDirName} for changes...`.yellow);
+        const watcher = fs.watch(path.dirname(clargs.src), (event, path) => {  
+            if (!this.time) this.time = Date.now();
 
-                const now = Date.now();
+            const now = Date.now();
 
-                if (now - this.time > internalCooldown) {
-                    console.log(`Detected change in ${path}...`);
+            if (now - this.time < internalCooldown) return; 
 
-                    try {
-                        compile(clargs.src, clargs.output);
-                    } catch (e) {
-                        console.log(e.message);
-                    }
+            console.log(`Detected change in ${path}...`);
 
-                    this.time = now;
-                }
-            });
+            try {
+                compile(clargs.src, clargs.output);
+            } catch (e) {
+                console.log(e.message);
+            }
+
+            this.time = now;
+                
+        });
         try {
-            parser = compile(clargs.src, clargs.output);
+            compile(clargs.src, clargs.output);
         } catch (e) {
             console.log(e.message);
         }

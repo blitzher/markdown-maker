@@ -1,6 +1,6 @@
 {
     "name": "dnd-markdown",
-    "version": "1.4.3",
+    "version": "1.5.0",
     "description": "",
     "main": "src/parse.js",
     "bin": {
@@ -29,7 +29,6 @@
     "license": "MIT",
     "dependencies": {
         "argparse": "^2.0.1",
-        "chokidar": "^3.5.1",
         "colors": "^1.4.0",
         "marked": "^2.0.1",
         "open": "^8.0.5",
