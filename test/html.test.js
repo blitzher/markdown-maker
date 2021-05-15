@@ -14,8 +14,9 @@ describe("HTML Emitting", () => {
         parser.opts.html = true;
         parser.opts.quiet = true;
 
-        parser.to("test/test-files/dist/bundle.md");
-        util.assert.strictEqual(util.fs.existsSync("test/test-files/dist/bundle.html"), true);
+        parser.to("test/test-files/dist/bundle.md", () => {
+            util.assert.strictEqual(util.fs.existsSync("test/test-files/dist/bundle.html"), true);
+        });
 
     });
     it("should be able to include html documents, and not parse")
