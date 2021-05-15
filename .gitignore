@@ -14,7 +14,7 @@ node_modules/
 dist/
 bin/
 tmp/
-test/test.files
+test-files/
 
 # actual document
 # synced via dropbox rather
