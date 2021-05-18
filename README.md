@@ -24,28 +24,38 @@ See below for options when compiling.
 
 ## Command Line Arguments
 
-**--use-underscore (-uu)**: 
+**--use-underscore (-uu)**:
+
 Change the id referencing in the Table of Contents to use "\_" instead of "-".
 Depending on your Markdown renderer of choice, this may fix ToC linking.
 
-**--verbose (-v)**:
-Enable verbose output
+**--verbose (-v) / --debug (-db)**:
+
+Enable verbose output, which prints much more information about which tokens are found.
+Debug mode also logs even more information, mostly useful for debugging the parser itself.
+
 
 **--watch (-w)**:
+
 Watch the target file or directory for changes, and recompile whenever changed.
 
-**--html**
+**--html**:
+
 Emit the compiled HTML to `dist/bundle.html`
 
 To style the document, it is recommended to put `#mdinclude<style.html>` in the head of your `main.md`, and in `style.html`, put
 ```html
 <!-- style.html -->
+
 <style>
-    /* your styles here */
+    /**
+     * your styles here 
+     */
 </style>
 ```
 
 **--allow-undef (-au)**
+
 Allow undefined variables. Instead of putting `<UDEF=VarName>`, put `<VarName>`.
 Useful for allowing infile CSS, code snippets or other situations, where the `<` and `>` symbols are used.
 However, this means that the variable with the same name *must* be undefined, so use only when needed.
