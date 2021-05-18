@@ -16,7 +16,6 @@ describe("Error handling", () => {
                     e = _e;
                     throw _e;
                 }
-                
             }
         )
 
@@ -26,7 +25,7 @@ describe("Error handling", () => {
          */
         util.assert.strictEqual(
             e.message,
-            "Unknown token: #mdNON" + 
+            "Unknown token: #mdNON" +
             "\n...on line 4 in test/test-files/sample1.md".grey
         )
 
@@ -54,12 +53,13 @@ describe("Error handling", () => {
         );
 
         /* ...where the error message is the traceback on line 2 -> */
+        let answer = "Unknown token: #mdNON" +
+            "\n...on line 1 in test/test-files/sample2.md".grey +
+            "\n...on line 2 in test/test-files/sample1.md".grey;
 
         util.assert.strictEqual(
-            e.message,
-            "Unknown token: #mdNON" +
-                "\n...on line 1 in test/test-files/sample2.md".grey +
-                "\n...on line 2 in test/test-files/sample1.md".grey
+            e.message.replace(/(\\)+/g, "/"),
+            answer
         );
     });
 });
