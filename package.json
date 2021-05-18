@@ -1,6 +1,6 @@
 {
     "name": "dnd-markdown",
-    "version": "1.5.1",
+    "version": "1.5.2",
     "description": "",
     "main": "src/parse.js",
     "bin": {
