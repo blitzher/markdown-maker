@@ -29,7 +29,7 @@ describe("Basic features", () => {
         util.assert.strictEqual(output, "# mac's farm\n* [mac's farm](#mac-s-farm)\n\n")
     });
     it("should allow variables in toc", () => {
-        const parser = new util.Parser("#mddef<name=Foobar>\n# mr. #mdvar<name>\n#mdmaketoc");
+        const parser = new util.Parser("#mddef<name=Foobar>\n# mr. #mdvar<name>\n#mdmaketoc<>");
         
         util.assert.strictEqual(parser.get(), "\n# mr. Foobar\n* [mr. Foobar](#mr-foobar)\n\n");
     });

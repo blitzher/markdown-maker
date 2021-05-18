@@ -63,12 +63,16 @@ argParser.add_argument("--allow-undef", "-au", {
 });
 //#endregion
 
+argParser.get_default()
 /* parse some md
  * recursively with extra options */
 class Parser {
     static TOKEN = "#md";
-    static getDefaultArgs = argParser.get_default;
-
+    static argParser = argParser;
+    
+    getDefaultArgs() {
+        return argParser.parse_known_args(["dummy"])[0];  
+    } 
     constructor(filename, clargs, parent) {
         /* this.working_directory */
         this.file = filename;
@@ -90,7 +94,7 @@ class Parser {
         };
 
         if (!clargs) {
-            clargs = argParser.get_default();
+            clargs = this.getDefaultArgs();
         }
 
         /* load data from file, if it exists,
