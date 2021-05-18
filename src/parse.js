@@ -6,7 +6,6 @@ const { ArgumentParser } = require("argparse"); /* for parsing clargs */
 const { version } = require("../package.json"); /* package version number */
 const marked = require("marked");
 
-
 const commands = require("./commands.js");
 
 const argParser = new ArgumentParser({
@@ -153,25 +152,25 @@ class Parser {
 
                 /* implement toc level */
                 let level = titleMatch[1].length;
-                if (level > this.opts.toc_level) return;
-
+                
                 /**
                  * parse elements of title
-                 * such as variables
-                 */
-                let title = titleMatch[2]
-                .split(" ")
-                .map((s) =>
-                s.startsWith(Parser.TOKEN) 
-                ? this.parseToken(s) 
-                : s
-                )
-                .join(" ");
-                this.opts.secs.push({ level, title });
+                 * such as variables */
+                if (level <= this.opts.toc_level) {
+                    let title = titleMatch[2]
+                    .split(" ")
+                    .map((s) =>
+                        s.startsWith(Parser.TOKEN) 
+                        ? this.parseToken(s) : s
+                        ).join(" ");
 
-                if (this.opts.debug) {
-                    console.log("updated sections:", this.opts.secs);
-                }
+                    this.opts.secs.push({ level, title });
+    
+                    if (this.opts.debug) {
+                        console.log("updated sections:", this.opts.secs);
+                    }
+                };
+
             }
 
             let __line_tokens = [];
@@ -267,16 +266,14 @@ class Parser {
         const beg = "* ";
         const hor = " ".repeat(tabSize);
         const sep = this.opts.use_underscore ? "_" : "-";
-        const stripRegExp = new RegExp("[^\\w" + sep + "]");
 
         this.opts.secs.forEach((sec) => {
             /* replace special characters by seperator
                that are not in beginning or end*/
             let link = `(#${sec.title
-                .replace(/(?:.)\W+(?=.)/g, (m) => `${m[0]}${sep}`)
-                .split(stripRegExp)
-                .join("")
+                .replace(/[^\w]+/g, sep)
                 .toLowerCase()})`;
+            
             /* strip any remaining special chars from link */
 
             let __line =
@@ -287,6 +284,7 @@ class Parser {
     }
 
     remove_double_blank_lines(blob) {
+        /* replace all triple newlines, and EOF by double newline */
         blob = blob.replace(/\n{3,}|^\n{2,}|\n{2,}$/g, "\n\n");
 
         return blob;
