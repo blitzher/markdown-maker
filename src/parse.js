@@ -69,10 +69,10 @@ argParser.get_default()
 class Parser {
     static TOKEN = "#md";
     static argParser = argParser;
-    
+
     getDefaultArgs() {
-        return argParser.parse_known_args(["dummy"])[0];  
-    } 
+        return argParser.parse_known_args(["dummy"])[0];
+    }
     constructor(filename, clargs, parent) {
         /* this.working_directory */
         this.file = filename;
@@ -93,17 +93,19 @@ class Parser {
             depth: 0,
         };
 
-        if (!clargs) {
-            clargs = this.getDefaultArgs();
-        }
+
 
         /* load data from file, if it exists,
          * otherwise, interpret as string */
         this.raw = fs.existsSync(this.file)
-           ? fs.readFileSync(this.file, "utf-8") + "\n"
-           : this.file;
+            ? fs.readFileSync(this.file, "utf-8") + "\n"
+            : this.file;
 
+        if (!clargs) {
+            clargs = {};
+        }
         /* append all commandline arguments to this */
+        Object.assign(this.opts, this.getDefaultArgs());
         Object.assign(this.opts, clargs);
     }
 
@@ -156,20 +158,20 @@ class Parser {
 
                 /* implement toc level */
                 let level = titleMatch[1].length;
-                
+
                 /**
                  * parse elements of title
                  * such as variables */
                 if (level <= this.opts.toc_level) {
                     let title = titleMatch[2]
-                    .split(" ")
-                    .map((s) =>
-                        s.startsWith(Parser.TOKEN) 
-                        ? this.parseToken(s) : s
+                        .split(" ")
+                        .map((s) =>
+                            s.startsWith(Parser.TOKEN)
+                                ? this.parseToken(s) : s
                         ).join(" ");
 
                     this.opts.secs.push({ level, title });
-    
+
                     if (this.opts.debug) {
                         console.log("updated sections:", this.opts.secs);
                     }
@@ -210,7 +212,7 @@ class Parser {
             }
         }
 
-        throw SyntaxError(`Unknown token: ${token}`);
+        throw new SyntaxError(`Unknown token: ${token}`);
     }
 
     preprocess(blob) {
@@ -277,7 +279,7 @@ class Parser {
             let link = `(#${sec.title
                 .replace(/[^\w]+/g, sep)
                 .toLowerCase()})`;
-            
+
             /* strip any remaining special chars from link */
 
             let __line =
@@ -297,20 +299,22 @@ class Parser {
     /* output the parsed document to bundle */
     to(bundle, cb) {
         const dir = path.dirname(bundle);
-        if (!cb) cb = () => {}
+        var called = false;
+        if (!cb) cb = () => { }
 
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir);
         }
         this.get((blob) => {
             fs.writeFile(bundle, blob, () => {
-                cb(bundle);
+                if (!called) cb(bundle);
+                called = true;
             });
         });
 
-        if(this.opts.html) {
+        if (this.opts.html) {
             const htmlFileName = bundle.replace(".md", ".html")
-            fs.writeFile(htmlFileName, this.html(), () => cb(htmlFileName));
+            fs.writeFile(htmlFileName, this.html(), () => { if (!called) cb(htmlFileName); called = true; });
         }
     }
 
@@ -369,11 +373,11 @@ if (require.main === module) {
     /* helper method for calling parser */
     const compile = (s, o) => {
         const parser = new Parser(s, clargs);
-        parser.to(o, (f) => {console.log(`Compiled ${f}`.green)});
+        parser.to(o, (f) => { console.log(`Compiled ${f}`.green) });
         return parser;
     };
 
-    
+
     if (!clargs.watch) {
         compile(clargs.src, clargs.output);
     } else {
@@ -383,12 +387,12 @@ if (require.main === module) {
 
         /* watch the folder of entry */
         console.log(`Watching ${srcDirName} for changes...`.yellow);
-        const watcher = fs.watch(path.dirname(clargs.src), (event, path) => {  
+        const watcher = fs.watch(path.dirname(clargs.src), (event, path) => {
             if (!this.time) this.time = Date.now();
 
             const now = Date.now();
 
-            if (now - this.time < internalCooldown) return; 
+            if (now - this.time < internalCooldown) return;
 
             console.log(`Detected change in ${path}...`);
 
@@ -399,7 +403,7 @@ if (require.main === module) {
             }
 
             this.time = now;
-                
+
         });
         try {
             compile(clargs.src, clargs.output);
