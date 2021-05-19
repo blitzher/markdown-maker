@@ -1,6 +1,6 @@
 {
   "name": "dnd-markdown",
-  "version": "1.5.1b",
+  "version": "1.5.1c",
   "description": "",
   "main": "src/parse.js",
   "bin": {
@@ -20,18 +20,20 @@
   "scripts": {
     "test": "mocha",
     "main": "node src/parse.js document/main.md -o dist/bundle.md",
+    "debug": "node src/parse.js -db document/main.md -o dist/bundle.md",
     "build": "pkg --output bin/mdparse .",
     "clear": "rm -rf dist",
     "premac-deploy": "npm run build",
     "mac-deploy": "mv bin/mdparse-macos ../commands/mdparse",
     "prewin-deploy": "npm run build",
-    "win-deploy": "mv bin\\mdparse-win.exe ..\\..\\commands\\mdparse.exe"
+    "win-deploy": "mv bin/mdparse-win.exe ../../commands/mdparse.exe"
   },
   "keywords": [],
   "author": "blitzher",
   "license": "MIT",
   "dependencies": {
     "argparse": "^2.0.1",
+    "chokidar": "^3.5.1",
     "colors": "^1.4.0",
     "marked": "^2.0.1",
     "open": "^8.0.5",

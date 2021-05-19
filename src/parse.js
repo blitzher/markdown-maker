@@ -5,6 +5,7 @@ require("colors"); /* for adding colours to strings */
 const { ArgumentParser } = require("argparse"); /* for parsing clargs */
 const { version } = require("../package.json"); /* package version number */
 const marked = require("marked");
+const choki = require("chokidar");
 
 const commands = require("./commands.js");
 
@@ -141,6 +142,9 @@ class Parser {
     }
 
     mainparse(blob) {
+        if (this.opts.verbose || this.opts.debug) {
+            console.debug("beginning mainparse".blue);
+        }
         let __blob = "";
 
         /* main parser instance loop */
@@ -173,7 +177,7 @@ class Parser {
                     this.opts.secs.push({ level, title });
 
                     if (this.opts.debug) {
-                        console.log("updated sections:", this.opts.secs);
+                        console.log("updated sections:", { level, title });
                     }
                 };
 
@@ -362,6 +366,8 @@ module.exports = Parser;
 if (require.main === module) {
     const clargs = argParser.parse_args();
 
+
+
     if (clargs.debug) {
         console.dir(clargs);
     }
@@ -378,33 +384,35 @@ if (require.main === module) {
     };
 
 
+    const srcDirName = path.dirname(clargs.src);
     if (!clargs.watch) {
+        console.log(srcDirName);
         compile(clargs.src, clargs.output);
     } else {
         const internalCooldown = 1000;
-        const srcDirName = path.dirname(clargs.src);
-
 
         /* watch the folder of entry */
         console.log(`Watching ${srcDirName} for changes...`.yellow);
-        const watcher = fs.watch(path.dirname(clargs.src), (event, path) => {
-            if (!this.time) this.time = Date.now();
+        const watcher = choki
+            .watch(srcDirName)
+            .on("all", (event, path) => {
+                if (!this.time) this.time = Date.now();
 
-            const now = Date.now();
+                const now = Date.now();
 
-            if (now - this.time < internalCooldown) return;
+                if (now - this.time < internalCooldown) return;
 
-            console.log(`Detected change in ${path}...`);
+                console.log(`Detected change in ${path}...`);
 
-            try {
-                compile(clargs.src, clargs.output);
-            } catch (e) {
-                console.log(e.message);
-            }
+                try {
+                    compile(clargs.src, clargs.output);
+                } catch (e) {
+                    console.log(e.message);
+                }
 
-            this.time = now;
+                this.time = now;
 
-        });
+            });
         try {
             compile(clargs.src, clargs.output);
         } catch (e) {
