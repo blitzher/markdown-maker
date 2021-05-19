@@ -54,11 +54,12 @@ To style the document, it is recommended to put `#mdinclude<style.html>` in the 
 </style>
 ```
 
-**--allow-undef (-au)**
+**--allow-undef (-au)**:
 
 Allow undefined variables. Instead of putting `<UDEF=VarName>`, put `<VarName>`.
 Useful for allowing infile CSS, code snippets or other situations, where the `<` and `>` symbols are used.
 However, this means that the variable with the same name *must* be undefined, so use only when needed.
+
 ---
 See `mdparse --help` for all arguments and their usage.
 
