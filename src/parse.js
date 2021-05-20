@@ -150,16 +150,15 @@ class Parser {
 
         /* main parser instance loop */
         blob.split("\n").forEach((line, lnum) => {
-            line = line.trim();
+
             this.line_num = lnum;
 
             /* a split version of line, looking like a section title */
             let sectionized = line.split(" ");
 
             /* if line looks like a title */
-            const titleMatch = line.match(/^(#+) (.+)$/);
-            if (this.opts.debug)
-                console.log("parsing line:", line, line.length, titleMatch);
+            const titleMatch = line.trim().match(/^(#+) (.+)$/);
+
             if (titleMatch) {
                 if (this.opts.verbose || this.opts.debug)
                     console.log("found toc element: " + sectionized);
