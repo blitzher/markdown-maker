@@ -8,6 +8,7 @@ const marked = require("marked");
 const choki = require("chokidar");
 
 const commands = require("./commands.js");
+const { title } = require("process");
 
 const argParser = new ArgumentParser({
     description: "Markdown bundler, with extra options",
@@ -149,13 +150,16 @@ class Parser {
 
         /* main parser instance loop */
         blob.split("\n").forEach((line, lnum) => {
+            line = line.trim();
             this.line_num = lnum;
 
             /* a split version of line, looking like a section title */
-            let sectionized = line.trim().split(" ");
+            let sectionized = line.split(" ");
 
             /* if line looks like a title */
             const titleMatch = line.match(/^(#+) (.+)$/);
+            if (this.opts.debug)
+                console.log("parsing line:", line, line.length, titleMatch);
             if (titleMatch) {
                 if (this.opts.verbose || this.opts.debug)
                     console.log("found toc element: " + sectionized);
