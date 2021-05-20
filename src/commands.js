@@ -1,15 +1,15 @@
 const path = require("path");
 
 const commands = {
-    preparse : [],
-    parse : [],
-    postparse : []
+    preparse: [],
+    parse: [],
+    postparse: []
 };
 
 const CommandType = {
-    PREPARSE : 0,
-    PARSE : 1,
-    POSTPARSE : 2
+    PREPARSE: 0,
+    PARSE: 1,
+    POSTPARSE: 2
 }
 
 class Command {
@@ -26,7 +26,7 @@ class Command {
             case CommandType.PREPARSE:
                 commands.preparse.push(this); break;
             case CommandType.POSTPARSE:
-                commands.postparse.push(this); break;    
+                commands.postparse.push(this); break;
         }
     }
 
@@ -62,8 +62,10 @@ new Command(
     (t, p) => t.match(/^#mdvar<(\w+)>/) || t.match(/^<(\w+)>/),
     (t, p) => {
         const match = t.match(/#mdvar<(\w+)>/);
-        const repl = (p.opts.allow_undef) ? `<${match[1]}>` : `<UDEF=${match[1]}>`;
-        const value = p.opts.defs[match[1]] || repl;
+        let value = p.opts.defs[match[1]];
+        if (!value && !p.opts.allow_undef)
+            throw new Error(`Undefined variable: ${match[1]}`);
+        value = value || `<${match[1]}>`
         return t.replace(match[0], value.replace("_", " "));
     },
 );
@@ -76,7 +78,7 @@ new Command(
 
         const Parser = require("./parse");
         /* increase the current recursive depth */
-        p.opts.depth ++;
+        p.opts.depth++;
 
         if (p.opts.depth > p.opts.max_depth) {
             throw new Error("max depth exceeded!");
@@ -89,13 +91,13 @@ new Command(
         /* keep the options the same */
         recursiveParser.opts = p.opts;
         recursiveParser.parent = p;
-        
+
         const _fileNameArr = recursiveParser.file.split(".")
         const fileType = _fileNameArr[_fileNameArr.length - 1];
-        
+
         const blob = (fileType === 'md') ? recursiveParser.get() : recursiveParser.raw;
 
-        p.opts.depth --;
+        p.opts.depth--;
         return blob;
     }
 );

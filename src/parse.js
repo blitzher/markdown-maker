@@ -5,8 +5,10 @@ require("colors"); /* for adding colours to strings */
 const { ArgumentParser } = require("argparse"); /* for parsing clargs */
 const { version } = require("../package.json"); /* package version number */
 const marked = require("marked");
+const choki = require("chokidar");
 
 const commands = require("./commands.js");
+const { title } = require("process");
 
 const argParser = new ArgumentParser({
     description: "Markdown bundler, with extra options",
@@ -69,10 +71,10 @@ argParser.get_default()
 class Parser {
     static TOKEN = "#md";
     static argParser = argParser;
-    
+
     getDefaultArgs() {
-        return argParser.parse_known_args(["dummy"])[0];  
-    } 
+        return argParser.parse_known_args(["dummy"])[0];
+    }
     constructor(filename, clargs, parent) {
         /* this.working_directory */
         this.file = filename;
@@ -93,17 +95,19 @@ class Parser {
             depth: 0,
         };
 
-        if (!clargs) {
-            clargs = this.getDefaultArgs();
-        }
+
 
         /* load data from file, if it exists,
          * otherwise, interpret as string */
         this.raw = fs.existsSync(this.file)
-           ? fs.readFileSync(this.file, "utf-8") + "\n"
-           : this.file;
+            ? fs.readFileSync(this.file, "utf-8") + "\n"
+            : this.file;
 
+        if (!clargs) {
+            clargs = {};
+        }
         /* append all commandline arguments to this */
+        Object.assign(this.opts, this.getDefaultArgs());
         Object.assign(this.opts, clargs);
     }
 
@@ -139,39 +143,41 @@ class Parser {
     }
 
     mainparse(blob) {
+        if (this.opts.verbose || this.opts.debug) {
+            console.debug("beginning mainparse".blue);
+        }
         let __blob = "";
 
         /* main parser instance loop */
         blob.split("\n").forEach((line, lnum) => {
+
             this.line_num = lnum;
 
-            /* a split version of line, looking like a section title */
-            let sectionized = line.trim().split(" ");
-
             /* if line looks like a title */
-            const titleMatch = line.match(/^(#+) (.+)$/);
+            const titleMatch = line.trim().match(/^(#+) (.+)$/);
+
             if (titleMatch) {
                 if (this.opts.verbose || this.opts.debug)
-                    console.log("found toc element: " + sectionized);
+                    console.log("found toc element: " + line);
 
                 /* implement toc level */
                 let level = titleMatch[1].length;
-                
+
                 /**
                  * parse elements of title
                  * such as variables */
                 if (level <= this.opts.toc_level) {
                     let title = titleMatch[2]
-                    .split(" ")
-                    .map((s) =>
-                        s.startsWith(Parser.TOKEN) 
-                        ? this.parseToken(s) : s
+                        .split(" ")
+                        .map((s) =>
+                            s.startsWith(Parser.TOKEN)
+                                ? this.parseToken(s) : s
                         ).join(" ");
 
                     this.opts.secs.push({ level, title });
-    
+
                     if (this.opts.debug) {
-                        console.log("updated sections:", this.opts.secs);
+                        console.log("updated sections:", { level, title });
                     }
                 };
 
@@ -210,7 +216,7 @@ class Parser {
             }
         }
 
-        throw SyntaxError(`Unknown token: ${token}`);
+        throw new SyntaxError(`Unknown token: ${token}`);
     }
 
     preprocess(blob) {
@@ -277,7 +283,7 @@ class Parser {
             let link = `(#${sec.title
                 .replace(/[^\w]+/g, sep)
                 .toLowerCase()})`;
-            
+
             /* strip any remaining special chars from link */
 
             let __line =
@@ -297,20 +303,22 @@ class Parser {
     /* output the parsed document to bundle */
     to(bundle, cb) {
         const dir = path.dirname(bundle);
-        if (!cb) cb = () => {}
+        var called = false;
+        if (!cb) cb = () => { }
 
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir);
         }
         this.get((blob) => {
             fs.writeFile(bundle, blob, () => {
-                cb(bundle);
+                if (!called) cb(bundle);
+                called = true;
             });
         });
 
-        if(this.opts.html) {
+        if (this.opts.html) {
             const htmlFileName = bundle.replace(".md", ".html")
-            fs.writeFile(htmlFileName, this.html(), () => cb(htmlFileName));
+            fs.writeFile(htmlFileName, this.html(), () => { if (!called) cb(htmlFileName); called = true; });
         }
     }
 
@@ -358,6 +366,8 @@ module.exports = Parser;
 if (require.main === module) {
     const clargs = argParser.parse_args();
 
+
+
     if (clargs.debug) {
         console.dir(clargs);
     }
@@ -369,38 +379,40 @@ if (require.main === module) {
     /* helper method for calling parser */
     const compile = (s, o) => {
         const parser = new Parser(s, clargs);
-        parser.to(o, (f) => {console.log(`Compiled ${f}`.green)});
+        parser.to(o, (f) => { console.log(`Compiled ${f}`.green) });
         return parser;
     };
 
-    
+
+    const srcDirName = path.dirname(clargs.src);
     if (!clargs.watch) {
+        console.log(srcDirName);
         compile(clargs.src, clargs.output);
     } else {
         const internalCooldown = 1000;
-        const srcDirName = path.dirname(clargs.src);
-
 
         /* watch the folder of entry */
         console.log(`Watching ${srcDirName} for changes...`.yellow);
-        const watcher = fs.watch(path.dirname(clargs.src), (event, path) => {  
-            if (!this.time) this.time = Date.now();
+        const watcher = choki
+            .watch(srcDirName)
+            .on("all", (event, path) => {
+                if (!this.time) this.time = Date.now();
 
-            const now = Date.now();
+                const now = Date.now();
 
-            if (now - this.time < internalCooldown) return; 
+                if (now - this.time < internalCooldown) return;
 
-            console.log(`Detected change in ${path}...`);
+                console.log(`Detected change in ${path}...`);
 
-            try {
-                compile(clargs.src, clargs.output);
-            } catch (e) {
-                console.log(e.message);
-            }
+                try {
+                    compile(clargs.src, clargs.output);
+                } catch (e) {
+                    console.log(e.message);
+                }
 
-            this.time = now;
-                
-        });
+                this.time = now;
+
+            });
         try {
             compile(clargs.src, clargs.output);
         } catch (e) {

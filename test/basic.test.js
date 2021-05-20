@@ -20,7 +20,7 @@ describe("Basic features", () => {
     });
     it("should make a table of contents", () => {
         const output = new util.Parser("# yo\n## bruh nugget\n#mdmaketoc").get();
-        
+
         util.assert.strictEqual(output, "# yo\n## bruh nugget\n* [yo](#yo)\n  * [bruh nugget](#bruh-nugget)\n\n");
     });
     it("should allow quotation marks in titles for toc", () => {
@@ -30,7 +30,7 @@ describe("Basic features", () => {
     });
     it("should allow variables in toc", () => {
         const parser = new util.Parser("#mddef<name=Foobar>\n# mr. #mdvar<name>\n#mdmaketoc<>");
-        
+
         util.assert.strictEqual(parser.get(), "\n# mr. Foobar\n* [mr. Foobar](#mr-foobar)\n\n");
     });
     it("should not exceed max include depth", () => {
