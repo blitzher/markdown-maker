@@ -153,15 +153,12 @@ class Parser {
 
             this.line_num = lnum;
 
-            /* a split version of line, looking like a section title */
-            let sectionized = line.split(" ");
-
             /* if line looks like a title */
             const titleMatch = line.trim().match(/^(#+) (.+)$/);
 
             if (titleMatch) {
                 if (this.opts.verbose || this.opts.debug)
-                    console.log("found toc element: " + sectionized);
+                    console.log("found toc element: " + line);
 
                 /* implement toc level */
                 let level = titleMatch[1].length;
