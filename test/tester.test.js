@@ -14,9 +14,15 @@ function put(text, file) {
 	fs.writeFileSync('test/test-files/' + file, text);
 }
 
+const TargetType = {
+	HTML: 0,
+	MARKDOWN: 1,
+};
+
 module.exports = {
 	fs,
 	assert,
 	Parser,
 	put,
+	TargetType,
 };
