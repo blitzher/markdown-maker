@@ -15,6 +15,7 @@ dist/
 bin/
 tmp/
 test/test-files
+build/
 
 # actual document
 # synced via dropbox rather
