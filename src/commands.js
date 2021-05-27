@@ -12,6 +12,11 @@ const CommandType = {
     POSTPARSE: 2
 }
 
+const TargetType = {
+    HTML: 0,
+    MARKDOWN: 1
+}
+
 class Command {
 
     constructor(type, validator, acter) {
@@ -110,10 +115,23 @@ new Command(
 );
 
 new Command(
+    CommandType.PARSE,
+    (t, p) => t.match(/#mdlabel<(\d+),([\w\W]+)>/),
+    (t, p) => {
+        if (p.opts.targetType !== TargetType.HTML) return;
+
+        const match = t.match(/#mdlabel<(\d+),([\w\W]+)>/);
+        return `<span id=\"${match[2]}\"></span>`
+
+    }
+)
+
+new Command(
     CommandType.POSTPARSE,
     (t, p) => t.match("(\s|^)POSTTASK:TOC"),
     (t, p) => p.gen_toc(),
 );
+
 
 
 module.exports = commands;

@@ -8,12 +8,19 @@ if (!fs.existsSync("test/test-files") || !fs.lstatSync("test/test-files").isDire
 }
 
 function put(text, file) {
-    fs.writeFileSync("test/test-files/" + file, text );
+    fs.writeFileSync("test/test-files/" + file, text);
 }
+
+const TargetType = {
+    HTML: 0,
+    MARKDOWN: 1
+}
+
 
 module.exports = {
     fs,
     assert,
     Parser,
     put,
+    TargetType
 }

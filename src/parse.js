@@ -8,7 +8,6 @@ const marked = require("marked");
 const choki = require("chokidar");
 
 const commands = require("./commands.js");
-const { title } = require("process");
 
 const argParser = new ArgumentParser({
     description: "Markdown bundler, with extra options",
@@ -50,7 +49,7 @@ argParser.add_argument("-uu", "--use-underscore", {
     help:
         "set the parser to use '_' as seperator in ids for Table of Content. If the links in the table does not work, this is likely to be the issue.",
 });
-argParser.add_argument("--toc-level", {
+argParser.add_argument("-tl", "--toc-level", {
     help: "the section level of the table of contents, by default is 3",
     default: 3,
     type: "int",
@@ -64,6 +63,11 @@ argParser.add_argument("--allow-undef", "-au", {
     help: "allow undefined variables. Mostly useful for typing inline html tags, and other non-strictly markdown related uses",
 });
 //#endregion
+
+const TargetType = {
+    HTML: 0,
+    MARKDOWN: 1
+}
 
 argParser.get_default()
 /* parse some md
@@ -86,7 +90,9 @@ class Parser {
         this.wd = path.dirname(filename);
 
         /* finished blob */
-        this.blob = undefined;
+        this.blobs = {};
+
+
 
         /* all options */
         this.opts = {
@@ -309,7 +315,7 @@ class Parser {
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir);
         }
-        this.get((blob) => {
+        this.get(TargetType.MARKDOWN, (blob) => {
             fs.writeFile(bundle, blob, () => {
                 if (!called) cb(bundle);
                 called = true;
@@ -324,21 +330,25 @@ class Parser {
 
     html(bundle) {
 
-        const htmlFormatted = marked(this.get());
+        const htmlFormatted = marked(this.get(TargetType.HTML));
 
         return htmlFormatted;
     }
 
-    get(callback) {
-        if (this.blob) {
+    get(targetType, callback) {
+        if (this.blobs[targetType]) {
             if (callback) {
-                callback(this.blob);
+                callback(this.blobs[targetType]);
             }
-            return this.blob;
+            return this.blobs[targetType];
         } else {
             try {
+                this.opts.targetType = targetType;
                 let blob = this.parse(callback);
+                this.blobs[targetType] = blob;
+                this.opts.targetType = undefined;
                 return blob;
+
             } catch (error) {
 
                 let traceback = "";
@@ -365,8 +375,6 @@ module.exports = Parser;
 /* main entrypoint */
 if (require.main === module) {
     const clargs = argParser.parse_args();
-
-
 
     if (clargs.debug) {
         console.dir(clargs);
