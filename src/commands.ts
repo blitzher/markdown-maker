@@ -1,4 +1,5 @@
 import * as path from "path";
+import { title } from "process";
 import Parser from "./parse";
 
 const commands = {
@@ -129,18 +130,46 @@ new Command(
 );
 
 new Command(
-    CommandType.PARSE,
+    CommandType.PREPARSE,
     (t, p) => t.match(/#mdlabel<(\d+),([\w\W]+)>/),
     (t, p) => {
         if (p.opts.targetType !== TargetType.HTML) return;
 
-        const match = t.match(/#mdlabel<(\d+),([\w\W]+)>/);
+        const match = t.match(/#mdlabel<([\d]+),([\w\W]+)>/);
         const level = Number.parseInt(match[1]);
         const title = match[2];
+        const link = p.titleId(title);
         p.opts.secs.push({ level, title });
-        return `<span id=\"${match[2]}\"></span>`;
+        return `<span id="${link}"></span>`;
     }
 );
+
+new Command(
+    CommandType.PARSE,
+    (t, p) => t.match(/#mdref<([\w\W]+)>/),
+    
+    (t, p) => {
+        const match = t.match(/#mdref<([\w\W]+)>/);
+        
+        for (let i = 0; i < p.opts.secs.length; i++) {
+            
+            let {title} = p.opts.secs[i];
+            if (title === match[1]) 
+            break;
+            
+            if (i === p.opts.secs.length - 1) 
+            throw new Error(`Reference to [${match[1]}] could not be resolved!`)
+        }
+        
+        match[1] = match[1].replace("_", " ");
+        const link = p.titleId(match[1]);
+        if (p.opts.targetType === TargetType.HTML)
+            return `<a href="#${link}">${match[1]}</a>`;
+        else if (p.opts.targetType === TargetType.MARKDOWN)
+            return `[${match[1]}](#${link})`
+        
+    }
+)
 
 new Command(
     CommandType.POSTPARSE,

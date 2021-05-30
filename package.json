@@ -1,6 +1,6 @@
 {
-	"name": "dnd-markdown",
-	"version": "1.5.2",
+	"name": "markdown-maker",
+	"version": "1.6.0",
 	"description": "",
 	"main": "src/parse.ts",
 	"bin": {

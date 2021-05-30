@@ -2,6 +2,7 @@ const fs = require("fs"); /* for handling reading of files */
 const path = require("path"); /* for handling file paths */
 
 import Colors = require("colors.ts"); /* for adding colours to strings */
+Colors.enable();
 const { ArgumentParser } = require("argparse"); /* for parsing clargs */
 const { version } = require("../package.json"); /* package version number */
 const marked = require("marked");
@@ -201,11 +202,11 @@ class Parser {
                  * such as variables */
                 if (level <= this.opts.toc_level) {
                     let title = titleMatch[2]
-                        .split(" ")
+                        .trim().split(" ")
                         .map((s) =>
                             s.startsWith(Parser.TOKEN) ? this.parseToken(s) : s
                         )
-                        .join(" ");
+                        .join("_");
 
                     this.opts.secs.push({ level, title });
 
@@ -302,22 +303,26 @@ class Parser {
         return __blob;
     }
 
+    titleId(title : string) {
+        const sep = this.opts.use_underscore ? "_" : "-";
+
+        return title.replace(/[\W_]+/g, sep).toLowerCase();
+
+    }
+
     gen_toc() {
         let __blob = [];
         let tabSize = 2;
         const beg = "* ";
         const hor = " ".repeat(tabSize);
-        const sep = this.opts.use_underscore ? "_" : "-";
 
         this.opts.secs.forEach((sec) => {
-            /* replace special characters by seperator
-               that are not in beginning or end*/
-            let link = `(#${sec.title.replace(/[^\w]+/g, sep).toLowerCase()})`;
-
-            /* strip any remaining special chars from link */
+            
+            const link = this.titleId(sec.title);
+            const title = sec.title.replace("_", " ")
 
             let __line =
-                hor.repeat(sec.level - 1) + beg + `[${sec.title}]${link}`;
+                hor.repeat(sec.level - 1) + beg + `[${title}](#${link})`;
             __blob.push(__line);
         });
         return __blob.join("\n");
@@ -380,8 +385,8 @@ class Parser {
                 let p: Parser = this;
 
                 do {
-                    traceback += `\n...on line ${p.line_num + 1} in ${p.file}`
-                        .gray;
+                    traceback += 
+                        `\n...on line ${p.line_num + 1} in ${p.file}`.grey(15);
                     if (p.parent) p = p.parent;
                 } while (p.parent);
 
