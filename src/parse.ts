@@ -1,7 +1,7 @@
 const fs = require("fs"); /* for handling reading of files */
 const path = require("path"); /* for handling file paths */
 
-require("colors"); /* for adding colours to strings */
+import Colors = require("colors.ts"); /* for adding colours to strings */
 const { ArgumentParser } = require("argparse"); /* for parsing clargs */
 const { version } = require("../package.json"); /* package version number */
 const marked = require("marked");
@@ -16,8 +16,7 @@ const argParser = new ArgumentParser({
 
 //#region command line args
 argParser.add_argument("src", {
-    help:
-        "file to be parsed. If this is a directory, it looks for entry point in the directory, see --entry",
+    help: "file to be parsed. If this is a directory, it looks for entry point in the directory, see --entry",
 });
 argParser.add_argument("--version", { action: "version", version });
 argParser.add_argument("-v", "--verbose", {
@@ -47,8 +46,7 @@ argParser.add_argument("-w", "--watch", {
 });
 argParser.add_argument("-uu", "--use-underscore", {
     action: "store_true",
-    help:
-        "set the parser to use '_' as seperator in ids for Table of Content. If the links in the table does not work, this is likely to be the issue.",
+    help: "set the parser to use '_' as seperator in ids for Table of Content. If the links in the table does not work, this is likely to be the issue.",
 });
 argParser.add_argument("--toc-level", {
     help: "the section level of the table of contents, by default is 3",
@@ -65,17 +63,48 @@ argParser.add_argument("--allow-undef", "-au", {
 });
 //#endregion
 
-argParser.get_default()
+enum TargetType {
+    HTML,
+    MARKDOWN,
+}
+
 /* parse some md
  * recursively with extra options */
 class Parser {
+    file: string;
+    parent?: Parser;
+    line_num: number;
+    wd: string;
+    blobs: {
+        [key: number]: string | undefined;
+    };
+    opts: {
+        defs: {
+            [key: string]: string;
+        };
+        secs: {
+            level: number;
+            title: string;
+        }[];
+        depth: number;
+        verbose: boolean;
+        debug: boolean;
+        max_depth: number;
+        use_underscore: boolean;
+        toc_level: number;
+        allow_undef: boolean;
+        html: boolean;
+        targetType: TargetType | undefined;
+    };
+    raw: string;
+
     static TOKEN = "#md";
     static argParser = argParser;
 
     getDefaultArgs() {
         return argParser.parse_known_args(["dummy"])[0];
     }
-    constructor(filename, clargs, parent) {
+    constructor(filename, clargs, parent?) {
         /* this.working_directory */
         this.file = filename;
 
@@ -86,16 +115,22 @@ class Parser {
         this.wd = path.dirname(filename);
 
         /* finished blob */
-        this.blob = undefined;
+        this.blobs = {};
 
         /* all options */
         this.opts = {
             defs: {},
             secs: [],
             depth: 0,
+            verbose: false,
+            debug: false,
+            max_depth: 15,
+            use_underscore: false,
+            toc_level: 3,
+            allow_undef: false,
+            html: false,
+            targetType: undefined,
         };
-
-
 
         /* load data from file, if it exists,
          * otherwise, interpret as string */
@@ -115,10 +150,13 @@ class Parser {
      * parse wrapper for handling
      * preprocessing, parsing and postprocess
      **/
-    parse(callback) {
+    parse() {
         if (this.opts.verbose || this.opts.debug) {
             console.log(
-                ("parsing " + this.file + ": depth=" + this.opts.depth).magenta
+                Colors.colors(
+                    "magenta",
+                    "parsing " + this.file + ": depth=" + this.opts.depth
+                )
             );
         }
 
@@ -135,11 +173,7 @@ class Parser {
          * main parse is complete     */
         __blob = this.postprocess(__blob);
 
-        this.blob = __blob;
-        if (callback) {
-            callback(this.blob);
-        }
-        return this.blob;
+        return __blob;
     }
 
     mainparse(blob) {
@@ -150,7 +184,6 @@ class Parser {
 
         /* main parser instance loop */
         blob.split("\n").forEach((line, lnum) => {
-
             this.line_num = lnum;
 
             /* if line looks like a title */
@@ -170,17 +203,16 @@ class Parser {
                     let title = titleMatch[2]
                         .split(" ")
                         .map((s) =>
-                            s.startsWith(Parser.TOKEN)
-                                ? this.parseToken(s) : s
-                        ).join(" ");
+                            s.startsWith(Parser.TOKEN) ? this.parseToken(s) : s
+                        )
+                        .join(" ");
 
                     this.opts.secs.push({ level, title });
 
                     if (this.opts.debug) {
                         console.log("updated sections:", { level, title });
                     }
-                };
-
+                }
             }
 
             let __line_tokens = [];
@@ -280,9 +312,7 @@ class Parser {
         this.opts.secs.forEach((sec) => {
             /* replace special characters by seperator
                that are not in beginning or end*/
-            let link = `(#${sec.title
-                .replace(/[^\w]+/g, sep)
-                .toLowerCase()})`;
+            let link = `(#${sec.title.replace(/[^\w]+/g, sep).toLowerCase()})`;
 
             /* strip any remaining special chars from link */
 
@@ -304,12 +334,12 @@ class Parser {
     to(bundle, cb) {
         const dir = path.dirname(bundle);
         var called = false;
-        if (!cb) cb = () => { }
+        if (!cb) cb = () => {};
 
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir);
         }
-        this.get((blob) => {
+        this.get(TargetType.MARKDOWN, (blob) => {
             fs.writeFile(bundle, blob, () => {
                 if (!called) cb(bundle);
                 called = true;
@@ -317,32 +347,38 @@ class Parser {
         });
 
         if (this.opts.html) {
-            const htmlFileName = bundle.replace(".md", ".html")
-            fs.writeFile(htmlFileName, this.html(), () => { if (!called) cb(htmlFileName); called = true; });
+            const htmlFileName = bundle.replace(".md", ".html");
+            fs.writeFile(htmlFileName, this.html(), () => {
+                if (!called) cb(htmlFileName);
+                called = true;
+            });
         }
     }
 
-    html(bundle) {
-
-        const htmlFormatted = marked(this.get());
+    html() {
+        const htmlFormatted = marked(this.get(TargetType.HTML));
 
         return htmlFormatted;
     }
 
-    get(callback) {
-        if (this.blob) {
+    get(targetType: TargetType, callback?) {
+        if (this.blobs[targetType]) {
             if (callback) {
-                callback(this.blob);
+                callback(this.blobs[targetType]);
             }
-            return this.blob;
+            return this.blobs[targetType];
         } else {
             try {
-                let blob = this.parse(callback);
+                this.opts.targetType = targetType;
+                let blob = this.parse();
+                this.opts.targetType = undefined;
+                if (callback) callback(blob);
                 return blob;
             } catch (error) {
-
                 let traceback = "";
-                let p = this;
+
+                let p: Parser = this;
+
                 do {
                     traceback += `\n...on line ${p.line_num + 1} in ${p.file}`
                         .gray;
@@ -362,11 +398,35 @@ class Parser {
 
 module.exports = Parser;
 
-/* main entrypoint */
-if (require.main === module) {
+function main() {
     const clargs = argParser.parse_args();
 
+    /* helper method for calling parser */
+    const compile = (s, o) => {
+        const parser = new Parser(s, clargs);
+        parser.to(o, (f) => {
+            console.log(`Compiled ${f}`.green);
+        });
+        return parser;
+    };
 
+    function watcher(event, path) {
+        const now = Date.now();
+
+        if (!this.time) this.time = now;
+
+        if (now - this.time < 1000) return;
+
+        console.log(`Detected change in ${path}...`);
+
+        try {
+            compile(clargs.src, clargs.output);
+        } catch (e) {
+            console.log(e.message);
+        }
+
+        this.time = now;
+    }
 
     if (clargs.debug) {
         console.dir(clargs);
@@ -376,43 +436,17 @@ if (require.main === module) {
         clargs.src = path.join(clargs.src, clargs.entry);
     }
 
-    /* helper method for calling parser */
-    const compile = (s, o) => {
-        const parser = new Parser(s, clargs);
-        parser.to(o, (f) => { console.log(`Compiled ${f}`.green) });
-        return parser;
-    };
-
-
     const srcDirName = path.dirname(clargs.src);
     if (!clargs.watch) {
         console.log(srcDirName);
         compile(clargs.src, clargs.output);
     } else {
-        const internalCooldown = 1000;
+        // const internalCooldown = 1000;
 
         /* watch the folder of entry */
         console.log(`Watching ${srcDirName} for changes...`.yellow);
-        const watcher = choki
-            .watch(srcDirName)
-            .on("all", (event, path) => {
-                if (!this.time) this.time = Date.now();
 
-                const now = Date.now();
-
-                if (now - this.time < internalCooldown) return;
-
-                console.log(`Detected change in ${path}...`);
-
-                try {
-                    compile(clargs.src, clargs.output);
-                } catch (e) {
-                    console.log(e.message);
-                }
-
-                this.time = now;
-
-            });
+        const _watcher = choki.watch(srcDirName).on("all", watcher);
         try {
             compile(clargs.src, clargs.output);
         } catch (e) {
@@ -420,3 +454,8 @@ if (require.main === module) {
         }
     }
 }
+
+/* main entrypoint */
+if (require.main === module) main();
+
+export default Parser;

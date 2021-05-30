@@ -1,20 +1,36 @@
-const path = require("path");
+import * as path from "path";
+import Parser from "./parse";
 
 const commands = {
     preparse: [],
     parse: [],
-    postparse: []
+    postparse: [],
 };
 
 const CommandType = {
     PREPARSE: 0,
     PARSE: 1,
-    POSTPARSE: 2
+    POSTPARSE: 2,
+};
+
+enum TargetType {
+    HTML,
+    MARKDOWN,
 }
 
 class Command {
+    type: number;
+    validator: (token: string, parser: Parser) => boolean | RegExpMatchArray;
+    acter: (token: string, parser: Parser) => string | void;
 
-    constructor(type, validator, acter) {
+    constructor(
+        type,
+        validator: (
+            token: string,
+            parser: Parser
+        ) => boolean | RegExpMatchArray,
+        acter: (token: string, parser: Parser) => string | void
+    ) {
         this.type = type;
         this.validator = validator;
         this.acter = acter;
@@ -22,11 +38,14 @@ class Command {
         /* add this function to appropriate file */
         switch (type) {
             case CommandType.PARSE:
-                commands.parse.push(this); break;
+                commands.parse.push(this);
+                break;
             case CommandType.PREPARSE:
-                commands.preparse.push(this); break;
+                commands.preparse.push(this);
+                break;
             case CommandType.POSTPARSE:
-                commands.postparse.push(this); break;
+                commands.postparse.push(this);
+                break;
         }
     }
 
@@ -43,7 +62,7 @@ class Command {
 new Command(
     CommandType.PREPARSE,
     (t, p) => t.match(/(?:\s|^)<\w+>/),
-    (t, p) => `#mdvar` + t,
+    (t, p) => `#mdvar` + t
 );
 
 /* mddef */
@@ -65,9 +84,9 @@ new Command(
         let value = p.opts.defs[match[1]];
         if (!value && !p.opts.allow_undef)
             throw new Error(`Undefined variable: ${match[1]}`);
-        value = value || `<${match[1]}>`
+        value = value || `<${match[1]}>`;
         return t.replace(match[0], value.replace("_", " "));
-    },
+    }
 );
 
 /** mdinclude */
@@ -75,7 +94,6 @@ new Command(
     CommandType.PARSE,
     (t, p) => t.match(/^#mdinclude<([\w.\/-]+)>/),
     (t, p) => {
-
         const Parser = require("./parse");
         /* increase the current recursive depth */
         p.opts.depth++;
@@ -92,10 +110,11 @@ new Command(
         recursiveParser.opts = p.opts;
         recursiveParser.parent = p;
 
-        const _fileNameArr = recursiveParser.file.split(".")
+        const _fileNameArr = recursiveParser.file.split(".");
         const fileType = _fileNameArr[_fileNameArr.length - 1];
 
-        const blob = (fileType === 'md') ? recursiveParser.get() : recursiveParser.raw;
+        const blob =
+            fileType === "md" ? recursiveParser.get() : recursiveParser.raw;
 
         p.opts.depth--;
         return blob;
@@ -106,15 +125,27 @@ new Command(
 new Command(
     CommandType.PARSE,
     (t, p) => t.match(/#mdmaketoc/),
-    (t, p) => "POSTTASK:TOC",
+    (t, p) => "POSTTASK:TOC"
+);
+
+new Command(
+    CommandType.PARSE,
+    (t, p) => t.match(/#mdlabel<(\d+),([\w\W]+)>/),
+    (t, p) => {
+        if (p.opts.targetType !== TargetType.HTML) return;
+
+        const match = t.match(/#mdlabel<(\d+),([\w\W]+)>/);
+        const level = Number.parseInt(match[1]);
+        const title = match[2];
+        p.opts.secs.push({ level, title });
+        return `<span id=\"${match[2]}\"></span>`;
+    }
 );
 
 new Command(
     CommandType.POSTPARSE,
-    (t, p) => t.match("(\s|^)POSTTASK:TOC"),
-    (t, p) => p.gen_toc(),
+    (t, p) => t.match("(s|^)POSTTASK:TOC"),
+    (t, p) => p.gen_toc()
 );
 
-
 module.exports = commands;
-
