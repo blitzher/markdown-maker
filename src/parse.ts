@@ -166,12 +166,11 @@ class Parser {
         /* apply preproccessing to raw file */
         __blob = this.preprocess(this.raw);
 
-        /* main parser instance loop */
+        /* main parser instance call */
         __blob = this.mainparse(__blob);
 
         /**
-         * apply postprocessing after
-         * main parse is complete     */
+         * apply postprocessing after */
         __blob = this.postprocess(__blob);
 
         return __blob;
@@ -179,7 +178,7 @@ class Parser {
 
     mainparse(blob) {
         if (this.opts.verbose || this.opts.debug) {
-            console.debug("beginning mainparse".blue);
+            console.debug(`beginning mainparse of '${this.file}'`.blue);
         }
         let __blob = "";
 
@@ -202,7 +201,8 @@ class Parser {
                  * such as variables */
                 if (level <= this.opts.toc_level) {
                     let title = titleMatch[2]
-                        .trim().split(" ")
+                        .trim()
+                        .split(" ")
                         .map((s) =>
                             s.startsWith(Parser.TOKEN) ? this.parseToken(s) : s
                         )
@@ -254,7 +254,7 @@ class Parser {
 
     preprocess(blob) {
         if (this.opts.verbose || this.opts.debug) {
-            console.debug("beginning preprocess".blue);
+            console.debug(`beginning preprocess of '${this.file}'`.blue);
         }
         let __blob = "";
         const lines = blob.split("\n");
@@ -277,7 +277,7 @@ class Parser {
 
     postprocess(blob) {
         if (this.opts.verbose || this.opts.debug) {
-            console.debug("beginning postprocess".blue);
+            console.debug(`beginning postprocess of '${this.file}'`.blue);
         }
         let __blob = "";
         const lines = blob.split("\n");
@@ -303,11 +303,10 @@ class Parser {
         return __blob;
     }
 
-    titleId(title : string) {
+    titleId(title: string) {
         const sep = this.opts.use_underscore ? "_" : "-";
 
         return title.replace(/[\W_]+/g, sep).toLowerCase();
-
     }
 
     gen_toc() {
@@ -317,9 +316,8 @@ class Parser {
         const hor = " ".repeat(tabSize);
 
         this.opts.secs.forEach((sec) => {
-            
             const link = this.titleId(sec.title);
-            const title = sec.title.replace("_", " ")
+            const title = sec.title.replace("_", " ");
 
             let __line =
                 hor.repeat(sec.level - 1) + beg + `[${title}](#${link})`;
@@ -330,7 +328,7 @@ class Parser {
 
     remove_double_blank_lines(blob) {
         /* replace all triple newlines, and EOF by double newline */
-        blob = blob.replace(/\n{3,}|^\n{2,}|\n{2,}$/g, "\n\n");
+        blob = blob.replace(/(\r\n|\n){3,}/g, "\n\n");
 
         return blob;
     }
@@ -385,8 +383,9 @@ class Parser {
                 let p: Parser = this;
 
                 do {
-                    traceback += 
-                        `\n...on line ${p.line_num + 1} in ${p.file}`.grey(15);
+                    traceback += `\n...on line ${p.line_num + 1} in ${
+                        p.file
+                    }`.grey(15);
                     if (p.parent) p = p.parent;
                 } while (p.parent);
 

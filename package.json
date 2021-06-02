@@ -1,57 +1,63 @@
 {
-	"name": "markdown-maker",
-	"version": "1.6.0",
-	"description": "",
-	"main": "src/parse.ts",
-	"bin": {
-		"parse": "build/parse.js"
-	},
-	"pkg": {
-		"assets": [
-			"node_modules/**/*",
-			"build/parse.js"
-		],
-		"targets": [
-			"node12-macos-x64",
-			"node12-win-x64",
-			"node12-linux-x64"
-		]
-	},
-	"scripts": {
-		"test": "mocha",
-		"test:yarn": "mocha",
-		"bundle": "tsc --project tsconfig.json",
-		"main": "node build/parse.js document/main.md -o dist/bundle.md",
-		"debug": "node src/parse.js -db document/main.md -o dist/bundle.md",
-		"build": "npm run bundle && pkg --output bin/mdparse .",
-		"build:yarn": "yarn bundle && pkg --output bin/mdparse .",
-		"clear": "rm -rf dist",
-		"premac-deploy": "npm run build",
-		"mac-deploy": "mv bin/mdparse-macos ../commands/mdparse",
-		"prewin-deploy": "npm run build",
-		"win-deploy": "mv bin/mdparse-win.exe ../../commands/mdparse.exe",
-		"pretest": "npm run bundle",
-		"pretest:yarn": "yarn bundle"
-	},
-	"keywords": [],
-	"author": "blitzher",
-	"license": "MIT",
-	"dependencies": {
-		"@types/chokidar": "^2.1.3",
-		"@types/colors": "^1.2.1",
-		"@types/node": "^15.6.1",
-		"argparse": "^2.0.1",
-		"chokidar": "^3.5.1",
-		"colors": "^1.4.0",
-		"colors.ts": "^1.0.20",
-		"marked": "^2.0.1",
-		"open": "^8.0.5",
-		"pkg": "^4.4.9"
-	},
-	"devDependencies": {
-		"cloc": "^2.7.0",
-		"mocha": "^8.3.1",
-		"prettier": "^2.3.0",
-		"typescript": "^4.3.2"
-	}
+    "name": "markdown-maker",
+    "version": "1.6.1",
+    "description": "",
+    "main": "src/parse.ts",
+    "bin": {
+        "parse": "build/parse.js"
+    },
+    "pkg": {
+        "assets": [
+            "node_modules/argparse/*",
+            "node_modules/chokidar/*",
+            "node_modules/colors/*",
+            "node_modules/colors./*",
+            "node_modules/marked/*",
+            "node_modules/open/*",
+            "node_modules/pkg/*",
+            "build/parse.js"
+        ],
+        "targets": [
+            "node12-macos-x64",
+            "node12-win-x64",
+            "node12-linux-x64"
+        ]
+    },
+    "scripts": {
+        "test": "mocha",
+        "test:yarn": "mocha",
+        "bundle": "tsc --project tsconfig.json",
+        "main": "node build/parse.js document/main.md -o dist/bundle.md",
+        "debug": "node src/parse.js -db document/main.md -o dist/bundle.md",
+        "build": "npm run bundle && pkg --output bin/mdparse .",
+        "build:yarn": "yarn bundle && pkg --output bin/mdparse .",
+        "clear": "rm -rf dist",
+        "premac-deploy": "npm run build",
+        "mac-deploy": "mv bin/mdparse-macos ../commands/mdparse",
+        "prewin-deploy": "npm run build",
+        "win-deploy": "mv bin/mdparse-win.exe ../../commands/mdparse.exe",
+        "pretest": "npm run bundle",
+        "pretest:yarn": "yarn bundle"
+    },
+    "keywords": [],
+    "author": "blitzher",
+    "license": "MIT",
+    "dependencies": {
+        "@types/chokidar": "^2.1.3",
+        "@types/colors": "^1.2.1",
+        "@types/node": "^15.6.1",
+        "argparse": "^2.0.1",
+        "chokidar": "^3.5.1",
+        "colors": "^1.4.0",
+        "colors.ts": "^1.0.20",
+        "marked": "^2.0.1",
+        "open": "^8.0.5",
+        "pkg": "^4.4.9"
+    },
+    "devDependencies": {
+        "cloc": "^2.7.0",
+        "mocha": "^8.3.1",
+        "prettier": "^2.3.0",
+        "typescript": "^4.3.2"
+    }
 }

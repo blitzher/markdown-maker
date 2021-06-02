@@ -7,8 +7,11 @@ describe("Managing blank lines", () => {
     });
 
     it("should reduce blank lines to 2", () => {
-        const output = new util.Parser("\n\n\n\n").get();
-        util.assert.strictEqual(output, "\n\n");
+        const output1 = new util.Parser("\n\n\n\n").get();
+        util.assert.strictEqual(output1, "\n\n");
+
+        const output2 = new util.Parser("\n\n\n\nHello!").get();
+        util.assert.strictEqual(output2, "\n\nHello!\n\n");
     });
 
     it("should allow words when removing blank lines", () => {
