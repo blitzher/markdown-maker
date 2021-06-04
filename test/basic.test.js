@@ -24,9 +24,10 @@ describe("Basic features", () => {
         util.assert.strictEqual(output, "# yo\n## bruh nugget\n* [yo](#yo)\n  * [bruh nugget](#bruh-nugget)\n\n");
     });
     it("should allow quotation marks in titles for toc", () => {
-        const output = new util.Parser("# mac's farm\n#mdmaketoc").get();
+        const parser = new util.Parser("# mac's farm\n#mdmaketoc")
+        const markdown = parser.get();
 
-        util.assert.strictEqual(output, "# mac's farm\n* [mac's farm](#mac-s-farm)\n\n")
+        util.assert.strictEqual(markdown, "# mac's farm\n* [mac's farm](#macs-farm)\n\n")
     });
     it("should allow variables in toc", () => {
         const parser = new util.Parser("#mddef<name=Foobar>\n# mr. #mdvar<name>\n#mdmaketoc<>");

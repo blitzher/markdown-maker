@@ -306,7 +306,11 @@ class Parser {
     titleId(title: string) {
         const sep = this.opts.use_underscore ? "_" : "-";
 
-        return title.replace(/[\W_]+/g, sep).toLowerCase();
+        title = title
+            .toLowerCase()
+            .replace(/[^\w\s]+/g, "")
+            .replace(/[\s_]+/g, sep);
+        return title;
     }
 
     gen_toc() {

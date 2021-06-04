@@ -9,7 +9,7 @@ describe("Command Line Arguments", () => {
 	});
 	it("--toc-level should exclude subsection with lower level", () => {
 		const output = new util.Parser("# foo bar\n### baz\n#mdmaketoc",
-			{ 'toc_level': 2, }).get();
+			{ 'toc_level': 2 }).get();
 
 		util.assert.strictEqual(output, "# foo bar\n### baz\n* [foo bar](#foo-bar)\n\n")
 	});

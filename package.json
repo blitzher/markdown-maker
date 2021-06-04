@@ -14,7 +14,6 @@
             "node_modules/colors./*",
             "node_modules/marked/*",
             "node_modules/open/*",
-            "node_modules/pkg/*",
             "build/parse.js"
         ],
         "targets": [
