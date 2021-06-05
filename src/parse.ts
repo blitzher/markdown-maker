@@ -161,6 +161,8 @@ class Parser {
             );
         }
 
+        this.opts.secs = [];
+
         let __blob;
 
         /* apply preproccessing to raw file */
