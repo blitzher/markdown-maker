@@ -161,8 +161,8 @@ class Parser {
             );
         }
 
-        this.opts.secs = [];
-
+        /* reset sections for beginning parse */
+        if (this.opts.depth === 0) this.opts.secs = [];
         let __blob;
 
         /* apply preproccessing to raw file */
@@ -323,10 +323,10 @@ class Parser {
 
         this.opts.secs.forEach((sec) => {
             const link = this.titleId(sec.title);
-            const title = sec.title.replace("_", " ");
+            const title = sec.title.replace(/_/g, " ");
 
             let __line =
-                hor.repeat(sec.level - 1) + beg + `[${title}](#${link})`;
+                hor.repeat(Math.max(sec.level - 1, 0)) + beg + `[${title}](#${link})`;
             __blob.push(__line);
         });
         return __blob.join("\n");
