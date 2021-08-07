@@ -11,56 +11,60 @@ const choki = require("chokidar");
 const commands = require("./commands.js");
 const { title } = require("process");
 
-const argParser = new ArgumentParser({
+const argParse = new ArgumentParser({
     description: "Markdown bundler, with extra options",
 });
 
 //#region command line args
-argParser.add_argument("src", {
+argParse.add_argument("src", {
     help: "file to be parsed. If this is a directory, it looks for entry point in the directory, see --entry",
 });
-argParser.add_argument("--version", { action: "version", version });
-argParser.add_argument("-v", "--verbose", {
+argParse.add_argument("--version", { action: "version", version });
+argParse.add_argument("-v", "--verbose", {
     action: "store_true",
     help: "enable verbose output",
 });
-argParser.add_argument("-db", "--debug", {
+argParse.add_argument("-db", "--debug", {
     action: "store_true",
     help: "enable debugging information",
 });
-argParser.add_argument("-o", "--output", {
+argParse.add_argument("-o", "--output", {
     help: "destination of bundle, by default is 'dist/bundle.md'",
     default: "dist/bundle.md",
 });
-argParser.add_argument("-d", "--max-depth", {
+argParse.add_argument("-d", "--max-depth", {
     help: "maximum recursion depth, by default is 15",
     default: 15,
     type: "int",
 });
-argParser.add_argument("-e", "--entry", {
+argParse.add_argument("-e", "--entry", {
     help: "assign entry point in directory, by default is 'main.md'",
     default: "main.md",
 });
-argParser.add_argument("-w", "--watch", {
+argParse.add_argument("-w", "--watch", {
     action: "store_true",
     help: "recompile after a change in target target file or directory.",
 });
-argParser.add_argument("-uu", "--use-underscore", {
+argParse.add_argument("-uu", "--use-underscore", {
     action: "store_true",
     help: "set the parser to use '_' as seperator in ids for Table of Content. If the links in the table does not work, this is likely to be the issue.",
 });
-argParser.add_argument("--toc-level", {
+argParse.add_argument("--toc-level", {
     help: "the section level of the table of contents, by default is 3",
     default: 3,
     type: "int",
 });
-argParser.add_argument("--html", {
+argParse.add_argument("--html", {
     action: "store_true",
     help: "compile HTML from the parsed markdown",
 });
-argParser.add_argument("--allow-undef", "-au", {
+argParse.add_argument("--allow-undef", "-au", {
     action: "store_true",
     help: "allow undefined variables. Mostly useful for typing inline html tags, and other non-strictly markdown related uses",
+});
+
+argParse.add_argument("args", {
+    nargs: "...",
 });
 //#endregion
 
@@ -100,10 +104,10 @@ class Parser {
     raw: string;
 
     static TOKEN = "#md";
-    static argParser = argParser;
+    static argParser = argParse;
 
     getDefaultArgs() {
-        return argParser.parse_known_args(["dummy"])[0];
+        return argParse.parse_known_args(["dummy"])[0];
     }
     constructor(filename, clargs, parent?) {
         /* this.working_directory */
@@ -326,7 +330,9 @@ class Parser {
             const title = sec.title.replace(/_/g, " ");
 
             let __line =
-                hor.repeat(Math.max(sec.level - 1, 0)) + beg + `[${title}](#${link})`;
+                hor.repeat(Math.max(sec.level - 1, 0)) +
+                beg +
+                `[${title}](#${link})`;
             __blob.push(__line);
         });
         return __blob.join("\n");
@@ -340,8 +346,8 @@ class Parser {
     }
 
     /* output the parsed document to bundle */
-    to(bundle, cb) {
-        const dir = path.dirname(bundle);
+    to(bundleName, cb) {
+        const dir = path.dirname(bundleName);
         var called = false;
         if (!cb) cb = () => {};
 
@@ -349,14 +355,14 @@ class Parser {
             fs.mkdirSync(dir);
         }
         this.get(TargetType.MARKDOWN, (blob) => {
-            fs.writeFile(bundle, blob, () => {
-                if (!called) cb(bundle);
+            fs.writeFile(bundleName, blob, () => {
+                if (!called) cb(bundleName);
                 called = true;
             });
         });
 
         if (this.opts.html) {
-            const htmlFileName = bundle.replace(".md", ".html");
+            const htmlFileName = bundleName.replace(".md", ".html");
             fs.writeFile(htmlFileName, this.html(), () => {
                 if (!called) cb(htmlFileName);
                 called = true;
@@ -409,7 +415,7 @@ class Parser {
 module.exports = Parser;
 
 function main() {
-    const clargs = argParser.parse_args();
+    const clargs = argParse.parse_args();
 
     /* helper method for calling parser */
     const compile = (s, o) => {
