@@ -31,7 +31,8 @@ describe("Command Line Arguments", () => {
             util.put("there", "sample2.md");
 
             const parser1 = new util.Parser("test/test-files/sample1.md");
-            parser1.opts.defs.YES = true;
+            parser1.opts.args.push("YES");
+            parser1.opts.debug = true;
             const output1 = parser1.get();
 
             util.assert.strictEqual(output1, "hello\nthere\n\n");

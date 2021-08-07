@@ -109,7 +109,7 @@ new Command(
         const [_, name, condition] = match;
 
         /* implement conditional imports */
-        if (condition && p.opts.defs[condition] === undefined) return;
+        if (condition && !p.opts.args.includes(condition)) return;
 
         const recursiveParser = new Parser(path.join(p.wd, name), p.opts, p);
 

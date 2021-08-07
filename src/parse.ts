@@ -65,6 +65,7 @@ argParse.add_argument("--allow-undef", "-au", {
 
 argParse.add_argument("args", {
     nargs: "...",
+    default: [],
 });
 //#endregion
 
@@ -91,6 +92,7 @@ class Parser {
             level: number;
             title: string;
         }[];
+        args: string[];
         depth: number;
         verbose: boolean;
         debug: boolean;
@@ -126,6 +128,7 @@ class Parser {
         this.opts = {
             defs: {},
             secs: [],
+            args: [],
             depth: 0,
             verbose: false,
             debug: false,
