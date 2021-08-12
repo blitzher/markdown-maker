@@ -168,6 +168,11 @@ class Parser {
             );
         }
 
+        if (this.opts.debug) {
+            console.log("Parsing options:");
+            console.log(this.opts);
+        }
+
         /* reset sections for beginning parse */
         if (this.opts.depth === 0) this.opts.secs = [];
         let __blob;
@@ -255,6 +260,15 @@ class Parser {
 
             if (command.valid(token, this)) {
                 return command.act(token, this);
+            }
+        }
+
+        /* check if the command is for later */
+        for (let i = 0; i < commands.postparse.length; i++) {
+            const command = commands.postparse[i];
+
+            if (command.valid(token, this)) {
+                return token;
             }
         }
 

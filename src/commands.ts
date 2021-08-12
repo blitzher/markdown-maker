@@ -128,13 +128,6 @@ new Command(
     }
 );
 
-/* convert #mdmaketoc into postparse task */
-new Command(
-    CommandType.PARSE,
-    (t, p) => t.match(/#mdmaketoc/),
-    (t, p) => "POSTTASK:TOC"
-);
-
 new Command(
     CommandType.PREPARSE,
     (t, p) => t.match(/#mdlabel<(\d+),([\w\W]+)>/),
@@ -178,7 +171,7 @@ new Command(
 
 new Command(
     CommandType.POSTPARSE,
-    (t, p) => t.match("(s|^)POSTTASK:TOC"),
+    (t, p) => t.match(/#mdmaketoc/),
     (t, p) => p.gen_toc()
 );
 

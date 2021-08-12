@@ -30,22 +30,22 @@ describe("Command Line Arguments", () => {
             util.put("hello\n#mdinclude<sample2.md,YES>", "sample1.md");
             util.put("there", "sample2.md");
 
-            const parser1 = new util.Parser("test/test-files/sample1.md");
-            parser1.opts.args.push("YES");
-            parser1.opts.debug = true;
-            const output1 = parser1.get();
+            const parser = new util.Parser("test/test-files/sample1.md");
+            parser.opts.args.push("YES");
 
-            util.assert.strictEqual(output1, "hello\nthere\n\n");
+            const output = parser.get();
+
+            util.assert.strictEqual(output, "hello\nthere\n\n");
         });
         it("shouldn't include a document when flag is unset", () => {
             util.put("hello\n#mdinclude<sample2.md,YES>", "sample1.md");
             util.put("there", "sample2.md");
 
-            const parser2 = new util.Parser("test/test-files/sample1.md");
+            const parser = new util.Parser("test/test-files/sample1.md");
 
-            const output2 = parser2.get();
+            const output = parser.get();
 
-            util.assert.strictEqual(output2, "hello\n\n");
+            util.assert.strictEqual(output, "hello\n\n");
         });
     });
 });
