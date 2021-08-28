@@ -39,6 +39,7 @@ class Parser {
         allow_undef: boolean;
         html: boolean;
         targetType: TargetType | undefined;
+        only_warn: boolean;
     };
     raw: string;
 
@@ -83,6 +84,7 @@ class Parser {
             allow_undef: false,
             html: false,
             targetType: undefined,
+            only_warn: false,
         };
 
         if (!clargs) {
@@ -362,7 +364,11 @@ class Parser {
                 /* only interested in stacktrace, when debugging */
                 if (!this.opts.debug) error.stack = "";
 
-                throw error;
+                if (this.opts.only_warn) 
+                    console.error(error);
+                else 
+                    throw error;
+                
             }
         }
     }
