@@ -7,7 +7,6 @@ import Parser from "./parse";
 Colors.enable();
 const { ArgumentParser } = require("argparse"); /* for parsing clargs */
 const { version } = require("../package.json"); /* package version number */
-const marked = require("marked");
 const choki = require("chokidar");
 
 export const argParser = new ArgumentParser({
@@ -68,10 +67,17 @@ function main() {
     const clargs = argParser.parse_args();
 
     /* helper method for calling parser */
-    const compile = (s, o, cb?) => {
-        const parser = new Parser(s, clargs);
-        parser.to(o, (f) => {
-            console.log(`Compiled ${f}`.green);
+    const compile = (source, output, cb?) => {
+
+		/* load data from file, if it exists,
+         * otherwise, interpret as string */
+        source = fs.existsSync(source)
+            ? fs.readFileSync(source, "utf-8") + "\n"
+            : source;
+
+        const parser = new Parser(source, clargs);
+        parser.to(output, (file) => {
+            console.log(`Compiled ${file}`.green);
             if (cb) cb();
         });
         return parser;

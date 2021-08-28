@@ -2,14 +2,9 @@ const fs = require("fs"); /* for handling reading of files */
 const path = require("path"); /* for handling file paths */
 
 import Colors = require("colors.ts"); /* for adding colours to strings */
-import { argParser } from "./cltool";
 Colors.enable();
-const { ArgumentParser } = require("argparse"); /* for parsing clargs */
-const { version } = require("../package.json"); /* package version number */
 const marked = require("marked");
-
 const commands = require("./commands.js");
-const { title } = require("process");
 
 enum TargetType {
     HTML,
@@ -49,12 +44,24 @@ class Parser {
 
     static TOKEN = "#md";
     
-    constructor(filename, clargs, parent?) {
+    constructor(filename, clargs, opts?: {
+            parent?: Parser,
+            isFileCallback? : (s:string) => false | string
+    }){
         /* this.working_directory */
         this.file = filename;
-
+        
+        if (!opts) opts = {}
+        /* Assign default isFile checker */
+        if (!opts.isFileCallback) {
+            opts.isFileCallback = (f) => {
+                if (!fs.existsSync(f)) return false;
+                return fs.readFileSync(this.file, "utf-8") + "\n"
+            }
+            this.raw = opts.isFileCallback(filename) || filename;
+        }
         /* the parent parser */
-        this.parent = parent;
+        this.parent = opts.parent;
 
         this.line_num = 0;
         this.wd = path.dirname(filename);
@@ -77,12 +84,6 @@ class Parser {
             html: false,
             targetType: undefined,
         };
-
-        /* load data from file, if it exists,
-         * otherwise, interpret as string */
-        this.raw = fs.existsSync(this.file)
-            ? fs.readFileSync(this.file, "utf-8") + "\n"
-            : this.file;
 
         if (!clargs) {
             clargs = {};
