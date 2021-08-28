@@ -93,7 +93,7 @@ new Command(
 /** mdinclude */
 new Command(
     CommandType.PARSE,
-    (t, p) => t.match(/^#mdinclude<([\w.\/-]+)>/),
+    (t, p) => t.match(/^#mdinclude<([\w.\/-]+)(?:[,\s]+([\w]+))?>/),
     (t, p) => {
         const Parser = require("./parse");
         /* increase the current recursive depth */
@@ -104,7 +104,13 @@ new Command(
         }
 
         /* get the matching group */
-        const name = t.match(/^#mdinclude<([\w.\/-]+)>/)[1];
+        const match = t.match(/^#mdinclude<([\w.\/-]+)(?:[,\s]+([\w]+))?>/);
+
+        const [_, name, condition] = match;
+
+        /* implement conditional imports */
+        if (condition && !p.opts.args.includes(condition)) return;
+
         const recursiveParser = new Parser(path.join(p.wd, name), p.opts, p);
 
         /* keep the options the same */
@@ -120,13 +126,6 @@ new Command(
         p.opts.depth--;
         return blob;
     }
-);
-
-/* convert #mdmaketoc into postparse task */
-new Command(
-    CommandType.PARSE,
-    (t, p) => t.match(/#mdmaketoc/),
-    (t, p) => "POSTTASK:TOC"
 );
 
 new Command(
@@ -147,33 +146,32 @@ new Command(
 new Command(
     CommandType.PARSE,
     (t, p) => t.match(/#mdref<([\w\W]+)>/),
-    
+
     (t, p) => {
         const match = t.match(/#mdref<([\w\W]+)>/);
-        
+
         for (let i = 0; i < p.opts.secs.length; i++) {
-            
-            let {title} = p.opts.secs[i];
-            if (title === match[1]) 
-            break;
-            
-            if (i === p.opts.secs.length - 1) 
-            throw new Error(`Reference to [${match[1]}] could not be resolved!`)
+            let { title } = p.opts.secs[i];
+            if (title === match[1]) break;
+
+            if (i === p.opts.secs.length - 1)
+                throw new Error(
+                    `Reference to [${match[1]}] could not be resolved!`
+                );
         }
-        
+
         match[1] = match[1].replace("_", " ");
         const link = p.titleId(match[1]);
         if (p.opts.targetType === TargetType.HTML)
             return `<a href="#${link}">${match[1]}</a>`;
         else if (p.opts.targetType === TargetType.MARKDOWN)
-            return `[${match[1]}](#${link})`
-        
+            return `[${match[1]}](#${link})`;
     }
-)
+);
 
 new Command(
     CommandType.POSTPARSE,
-    (t, p) => t.match("(s|^)POSTTASK:TOC"),
+    (t, p) => t.match(/#mdmaketoc/),
     (t, p) => p.gen_toc()
 );
 

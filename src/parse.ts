@@ -34,6 +34,7 @@ class Parser {
             level: number;
             title: string;
         }[];
+        args: string[];
         depth: number;
         verbose: boolean;
         debug: boolean;
@@ -65,6 +66,7 @@ class Parser {
         this.opts = {
             defs: {},
             secs: [],
+            args: [],
             depth: 0,
             verbose: false,
             debug: false,
@@ -102,6 +104,11 @@ class Parser {
                     "parsing " + this.file + ": depth=" + this.opts.depth
                 )
             );
+        }
+
+        if (this.opts.debug) {
+            console.log("Parsing options:");
+            console.log(this.opts);
         }
 
         /* reset sections for beginning parse */
@@ -194,6 +201,15 @@ class Parser {
             }
         }
 
+        /* check if the command is for later */
+        for (let i = 0; i < commands.postparse.length; i++) {
+            const command = commands.postparse[i];
+
+            if (command.valid(token, this)) {
+                return token;
+            }
+        }
+
         throw new SyntaxError(`Unknown token: ${token}`);
     }
 
@@ -269,7 +285,9 @@ class Parser {
             const title = sec.title.replace(/_/g, " ");
 
             let __line =
-                hor.repeat(Math.max(sec.level - 1, 0)) + beg + `[${title}](#${link})`;
+                hor.repeat(Math.max(sec.level - 1, 0)) +
+                beg +
+                `[${title}](#${link})`;
             __blob.push(__line);
         });
         return __blob.join("\n");
@@ -283,8 +301,8 @@ class Parser {
     }
 
     /* output the parsed document to bundle */
-    to(bundle, cb) {
-        const dir = path.dirname(bundle);
+    to(bundleName, cb) {
+        const dir = path.dirname(bundleName);
         var called = false;
         if (!cb) cb = () => {};
 
@@ -292,14 +310,14 @@ class Parser {
             fs.mkdirSync(dir);
         }
         this.get(TargetType.MARKDOWN, (blob) => {
-            fs.writeFile(bundle, blob, () => {
-                if (!called) cb(bundle);
+            fs.writeFile(bundleName, blob, () => {
+                if (!called) cb(bundleName);
                 called = true;
             });
         });
 
         if (this.opts.html) {
-            const htmlFileName = bundle.replace(".md", ".html");
+            const htmlFileName = bundleName.replace(".md", ".html");
             fs.writeFile(htmlFileName, this.html(), () => {
                 if (!called) cb(htmlFileName);
                 called = true;
