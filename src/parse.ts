@@ -58,8 +58,8 @@ class Parser {
                 if (!fs.existsSync(f)) return false;
                 return fs.readFileSync(this.file, "utf-8") + "\n"
             }
-            this.raw = opts.isFileCallback(filename) || filename;
         }
+        this.raw = opts.isFileCallback(filename) || filename;
         /* the parent parser */
         this.parent = opts.parent;
 
