@@ -2,9 +2,9 @@
     "name": "markdown-maker",
     "version": "1.6.2",
     "description": "",
-    "main": "src/parse.ts",
+    "main": "src/cltool.ts",
     "bin": {
-        "parse": "build/parse.js"
+        "parse": "build/cltool.js"
     },
     "pkg": {
         "assets": [
@@ -14,7 +14,7 @@
             "node_modules/colors./*",
             "node_modules/marked/*",
             "node_modules/open/*",
-            "build/parse.js"
+            "build/cltool.js"
         ],
         "targets": [
             "node12-macos-x64",
@@ -26,8 +26,8 @@
         "test": "mocha",
         "test:yarn": "mocha",
         "bundle": "tsc --project tsconfig.json",
-        "main": "node build/parse.js document/main.md -o dist/bundle.md",
-        "debug": "node src/parse.js -db document/main.md -o dist/bundle.md",
+        "main": "node build/cltool.js document/main.md -o dist/bundle.md",
+        "debug": "node src/cltool.js -db document/main.md -o dist/bundle.md",
         "build": "npm run bundle && pkg --output bin/mdparse .",
         "build:yarn": "yarn bundle && pkg --output bin/mdparse .",
         "clear": "rm -rf dist",
@@ -50,13 +50,13 @@
         "colors": "^1.4.0",
         "colors.ts": "^1.0.20",
         "marked": "^2.0.1",
-        "open": "^8.0.5",
-        "pkg": "^4.4.9"
+        "open": "^8.0.5"
     },
     "devDependencies": {
         "cloc": "^2.7.0",
         "mocha": "^8.3.1",
         "prettier": "^2.3.0",
-        "typescript": "^4.3.2"
+        "typescript": "^4.3.2",
+        "pkg": "^4.4.9"
     }
 }
