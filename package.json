@@ -36,7 +36,8 @@
         "prewin-deploy": "npm run build",
         "win-deploy": "mv bin/mdparse-win.exe ../../commands/mdparse.exe",
         "pretest": "npm run bundle",
-        "pretest:yarn": "yarn bundle"
+        "pretest:yarn": "yarn bundle",
+        "prepare": "npm run build"
     },
     "keywords": [],
     "author": "blitzher",
