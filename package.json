@@ -32,7 +32,7 @@
         "build:yarn": "yarn bundle && pkg --output bin/mdparse .",
         "clear": "rm -rf dist",
         "premac-deploy": "npm run build",
-        "mac-deploy": "mv bin/mdparse-macos ../commands/mdparse",
+        "mac-deploy": "mv bin/mdparse-macos ~/Documents/commands/mdparse",
         "prewin-deploy": "npm run build",
         "win-deploy": "mv bin/mdparse-win.exe ../../commands/mdparse.exe",
         "pretest": "npm run bundle",

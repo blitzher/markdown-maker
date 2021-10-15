@@ -44,21 +44,25 @@ class Parser {
     raw: string;
 
     static TOKEN = "#md";
-    
-    constructor(filename, clargs, opts?: {
-            parent?: Parser,
-            isFileCallback? : (s:string) => false | string
-    }){
+
+    constructor(
+        filename,
+        clargs,
+        opts?: {
+            parent?: Parser;
+            isFileCallback?: (s: string) => false | string;
+        }
+    ) {
         /* this.working_directory */
         this.file = filename;
-        
-        if (!opts) opts = {}
+
+        if (!opts) opts = {};
         /* Assign default isFile checker */
         if (!opts.isFileCallback) {
             opts.isFileCallback = (f) => {
                 if (!fs.existsSync(f)) return false;
-                return fs.readFileSync(this.file, "utf-8") + "\n"
-            }
+                return fs.readFileSync(f, "utf-8") + "\n";
+            };
         }
         this.raw = opts.isFileCallback(filename) || filename;
         /* the parent parser */
@@ -78,7 +82,7 @@ class Parser {
             depth: 0,
             verbose: false,
             debug: false,
-            max_depth: 15,
+            max_depth: 5,
             use_underscore: false,
             toc_level: 3,
             allow_undef: false,
@@ -364,11 +368,8 @@ class Parser {
                 /* only interested in stacktrace, when debugging */
                 if (!this.opts.debug) error.stack = "";
 
-                if (this.opts.only_warn) 
-                    console.error(error);
-                else 
-                    throw error;
-                
+                if (this.opts.only_warn) console.error(error);
+                else throw error;
             }
         }
     }
