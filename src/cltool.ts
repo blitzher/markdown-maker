@@ -68,12 +68,8 @@ function main() {
 
     /* helper method for calling parser */
     const compile = (source, output, cb?) => {
-
-		/* load data from file, if it exists,
+        /* load data from file, if it exists,
          * otherwise, interpret as string */
-        source = fs.existsSync(source)
-            ? fs.readFileSync(source, "utf-8") + "\n"
-            : source;
 
         const parser = new Parser(source, clargs);
         parser.to(output, (file) => {
@@ -106,15 +102,14 @@ function main() {
         this.time = now;
     }
 
-    if (clargs.debug) {
-        console.dir(clargs);
-    }
     /* in case source is a directory, look for entry in directory */
     if (fs.existsSync(clargs.src) && fs.lstatSync(clargs.src).isDirectory()) {
         clargs.src = path.join(clargs.src, clargs.entry);
     }
 
     const srcDirName = path.dirname(clargs.src);
+
+    if (clargs.debug) console.dir(clargs);
 
     if (!clargs.watch) compile(clargs.src, clargs.output);
 

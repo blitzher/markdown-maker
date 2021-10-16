@@ -95,7 +95,6 @@ new Command(
     CommandType.PARSE,
     (t, p) => t.match(/^#mdinclude<([\w.\/-]+)(?:[,\s]+([\w]+))?>/),
     (t, p) => {
-        const Parser = require("./parse");
         /* increase the current recursive depth */
         p.opts.depth++;
 
@@ -111,17 +110,20 @@ new Command(
         /* implement conditional imports */
         if (condition && !p.opts.args.includes(condition)) return;
 
-        const recursiveParser = new Parser(path.join(p.wd, name), p.opts, p);
+        const recursiveParser = new Parser(path.join(p.wd, name), p.opts, {
+            parent: p,
+        });
 
         /* keep the options the same */
         recursiveParser.opts = p.opts;
         recursiveParser.parent = p;
 
-        const _fileNameArr = recursiveParser.file.split(".");
-        const fileType = _fileNameArr[_fileNameArr.length - 1];
+        const fileType = path.extname(recursiveParser.file);
 
         const blob =
-            fileType === "md" ? recursiveParser.get() : recursiveParser.raw;
+            fileType === ".md"
+                ? recursiveParser.get(p.opts.targetType)
+                : recursiveParser.raw;
 
         p.opts.depth--;
         return blob;

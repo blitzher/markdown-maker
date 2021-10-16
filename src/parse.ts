@@ -40,6 +40,8 @@ class Parser {
         html: boolean;
         targetType: TargetType | undefined;
         only_warn: boolean;
+        parent?: Parser;
+        isFileCallback: (s: string) => false | string;
     };
     raw: string;
 
@@ -57,14 +59,7 @@ class Parser {
         this.file = filename;
 
         if (!opts) opts = {};
-        /* Assign default isFile checker */
-        if (!opts.isFileCallback) {
-            opts.isFileCallback = (f) => {
-                if (!fs.existsSync(f)) return false;
-                return fs.readFileSync(f, "utf-8") + "\n";
-            };
-        }
-        this.raw = opts.isFileCallback(filename) || filename;
+
         /* the parent parser */
         this.parent = opts.parent;
 
@@ -89,14 +84,21 @@ class Parser {
             html: false,
             targetType: undefined,
             only_warn: false,
+            parent: undefined,
+            isFileCallback: (f) => {
+                if (!fs.existsSync(f)) return false;
+                return fs.readFileSync(f, "utf-8") + "\n";
+            },
         };
 
         if (!clargs) {
             clargs = {};
         }
         /* append all commandline arguments to this */
-        Object.assign(this.opts);
         Object.assign(this.opts, clargs);
+        Object.assign(this.opts, opts);
+
+        this.raw = this.opts.isFileCallback(filename) || filename;
     }
 
     /**
