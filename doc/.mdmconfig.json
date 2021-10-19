@@ -1,0 +1,6 @@
+{
+    "opts": {
+        "src": "main.md",
+        "use-underscore": true
+    }
+}

@@ -94,6 +94,7 @@ class Parser {
         if (!clargs) {
             clargs = {};
         }
+
         /* append all commandline arguments to this */
         Object.assign(this.opts, clargs);
         Object.assign(this.opts, opts);
@@ -160,20 +161,18 @@ class Parser {
                 /**
                  * parse elements of title
                  * such as variables */
-                if (level <= this.opts.toc_level) {
-                    let title = titleMatch[2]
-                        .trim()
-                        .split(" ")
-                        .map((s) =>
-                            s.startsWith(Parser.TOKEN) ? this.parseToken(s) : s
-                        )
-                        .join("_");
+                let title = titleMatch[2]
+                    .trim()
+                    .split(" ")
+                    .map((s) =>
+                        s.startsWith(Parser.TOKEN) ? this.parseToken(s) : s
+                    )
+                    .join("_");
 
-                    this.opts.secs.push({ level, title });
+                this.opts.secs.push({ level, title });
 
-                    if (this.opts.debug) {
-                        console.log("updated sections:", { level, title });
-                    }
+                if (this.opts.debug) {
+                    console.log("updated sections:", { level, title });
                 }
             }
 
@@ -290,6 +289,7 @@ class Parser {
         const hor = " ".repeat(tabSize);
 
         this.opts.secs.forEach((sec) => {
+            if (sec.level > this.opts.toc_level) return;
             const link = this.titleId(sec.title);
             const title = sec.title.replace(/_/g, " ");
 

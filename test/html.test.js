@@ -7,7 +7,10 @@ describe("HTML Emitting", () => {
         parser.opts.quiet = true;
 
         parser.to("test/test-files/dist/bundle.md", () => {
-            util.assert.strictEqual(util.fs.existsSync("test/test-files/dist/bundle.html"), true);
+            util.assert.strictEqual(
+                util.fs.existsSync("test/test-files/dist/bundle.html"),
+                true
+            );
             done();
         });
     });
@@ -17,7 +20,10 @@ describe("HTML Emitting", () => {
 
         const output = parser.html();
 
-        util.assert.strictEqual(output, '<h1 id="cool-title">cool title</h1>\n<p>with a cool paragraph</p>\n');
+        util.assert.strictEqual(
+            output,
+            '<h1 id="cool-title">cool title</h1>\n<p>with a cool paragraph</p>\n'
+        );
     });
     it("should be able to include html documents, and not parse", () => {
         util.put("#mdinclude<sample2.html>", "sample1.md");
@@ -28,4 +34,4 @@ describe("HTML Emitting", () => {
 
         util.assert.strictEqual(output, "#mdvar<lul>\n\n");
     });
-})
+});

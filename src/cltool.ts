@@ -2,6 +2,7 @@ const fs = require("fs"); /* for handling reading of files */
 const path = require("path"); /* for handling file paths */
 
 import Colors = require("colors.ts"); /* for adding colours to strings */
+import { symlinkSync } from "fs";
 import Parser from "./parse";
 
 Colors.enable();
@@ -11,7 +12,10 @@ const choki = require("chokidar");
 
 export const argParser = new ArgumentParser({
     description: "Markdown bundler, with extra options",
+    prog: process.argv[0].split(path.sep).pop(),
 });
+
+const configFileName = ".mdmconfig.json";
 
 //#region command line args
 argParser.add_argument("src", {
@@ -64,7 +68,19 @@ argParser.add_argument("--allow-undef", "-au", {
 
 function main() {
     // var server: refreshServer | undefined;
-    const clargs = argParser.parse_args();
+    let clargs;
+    if (fs.existsSync(configFileName)) {
+        let data = JSON.parse(fs.readFileSync(configFileName)).opts;
+
+        let args = [];
+        Object.entries(data).forEach(([key, value]) => {
+            if (key != "src") args.push("--" + key);
+            if (typeof value != "boolean") args.push(value);
+        });
+        args.push(data.src);
+
+        argParser.parse_args(args);
+    } else clargs = argParser.parse_args();
 
     /* helper method for calling parser */
     const compile = (source, output, cb?) => {
