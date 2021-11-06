@@ -19,3 +19,5 @@ build/
 
 # actual document
 # synced via dropbox rather
+
+yarn.lock

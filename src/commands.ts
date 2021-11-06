@@ -1,5 +1,4 @@
 import * as path from "path";
-import { title } from "process";
 import Parser from "./parse";
 
 const commands = {
@@ -19,7 +18,7 @@ enum TargetType {
     MARKDOWN,
 }
 
-class Command {
+export class Command {
     type: number;
     validator: (token: string, parser: Parser) => boolean | RegExpMatchArray;
     acter: (token: string, parser: Parser) => string | void;
@@ -28,9 +27,9 @@ class Command {
         type,
         validator: (
             token: string,
-            parser: Parser
+            parser: Parser,
         ) => boolean | RegExpMatchArray,
-        acter: (token: string, parser: Parser) => string | void
+        acter: (token: string, parser: Parser) => string | void,
     ) {
         this.type = type;
         this.validator = validator;
@@ -63,7 +62,7 @@ class Command {
 new Command(
     CommandType.PREPARSE,
     (t, p) => t.match(/(?:\s|^)<\w+>/),
-    (t, p) => `#mdvar` + t
+    (t, p) => `#mdvar` + t,
 );
 
 /* mddef */
@@ -73,7 +72,7 @@ new Command(
     (t, p) => {
         const m = t.match(/^#mddef<(\w+)=(\w+)>/);
         p.opts.defs[m[1]] = m[2];
-    }
+    },
 );
 
 /* mdvar */
@@ -87,7 +86,7 @@ new Command(
             throw new Error(`Undefined variable: ${match[1]}`);
         value = value || `<${match[1]}>`;
         return t.replace(match[0], value.replace("_", " "));
-    }
+    },
 );
 
 /** mdinclude */
@@ -127,7 +126,7 @@ new Command(
 
         p.opts.depth--;
         return blob;
-    }
+    },
 );
 
 new Command(
@@ -142,7 +141,7 @@ new Command(
         const link = p.titleId(title);
         p.opts.secs.push({ level, title });
         return `<span id="${link}"></span>`;
-    }
+    },
 );
 
 /* mdref */
@@ -159,7 +158,7 @@ new Command(
 
             if (i === p.opts.secs.length - 1)
                 throw new Error(
-                    `Reference to [${match[1]}] could not be resolved!`
+                    `Reference to [${match[1]}] could not be resolved!`,
                 );
         }
 
@@ -169,13 +168,13 @@ new Command(
             return `<a href="#${link}">${match[1]}</a>`;
         else if (p.opts.targetType === TargetType.MARKDOWN)
             return `[${match[1]}](#${link})`;
-    }
+    },
 );
 
 new Command(
     CommandType.POSTPARSE,
     (t, p) => t.match(/#mdmaketoc/),
-    (t, p) => p.gen_toc()
+    (t, p) => p.gen_toc(),
 );
 
 module.exports = commands;
