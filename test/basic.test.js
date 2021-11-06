@@ -57,6 +57,6 @@ describe("Basic features", () => {
     it("should be able to reference toc elements, even if they are below toc-level", () => {
         const parser = new util.Parser(`### Title\n#mdref<Title>`);
 
-        util.assert.strictEqual(parser.get(), "### Title\n[title](Title)\n\n");
+        util.assert.strictEqual(parser.get(), "### Title\n[Title](#title)\n\n");
     });
 });

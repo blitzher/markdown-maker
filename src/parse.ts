@@ -341,6 +341,8 @@ class Parser {
     }
 
     get(targetType: TargetType, callback?) {
+        /* If target type is undefined, markdown is the default */
+        if (targetType == undefined) targetType = TargetType.MARKDOWN;
         if (this.blobs[targetType]) {
             if (callback) {
                 callback(this.blobs[targetType]);

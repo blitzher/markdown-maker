@@ -145,6 +145,7 @@ new Command(
     }
 );
 
+/* mdref */
 new Command(
     CommandType.PARSE,
     (t, p) => t.match(/#mdref<([\w\W]+)>/),
