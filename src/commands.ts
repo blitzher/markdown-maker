@@ -68,9 +68,9 @@ new Command(
 /* mddef */
 new Command(
     CommandType.PARSE,
-    (t, p) => t.match(/^#mddef<(\w+)=(\w+)>/),
+    (t, p) => t.match(/^#mddef<(.+)=(.+)>/),
     (t, p) => {
-        const m = t.match(/^#mddef<(\w+)=(\w+)>/);
+        const m = t.match(/^#mddef<(.+)=(.+)>/);
         p.opts.defs[m[1]] = m[2];
     },
 );
