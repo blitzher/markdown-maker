@@ -1,6 +1,6 @@
 {
     "name": "markdown-maker",
-    "version": "1.7.11",
+    "version": "1.8.0",
     "description": "",
     "main": "src/cltool.ts",
     "bin": {
