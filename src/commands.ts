@@ -2,6 +2,7 @@ import * as path from "path";
 import Parser from "./parse";
 import * as fs from "fs";
 import { tmpdir } from "os";
+import templates from "./templates";
 
 const commands = {
     preparse: [],
@@ -173,12 +174,19 @@ new Command(
     }
 );
 
-const presentation_template = require("../src/templates/presentation.js");
 new Command(
     CommandType.PARSE,
-    (t, p) => t.match(/#mdpresentation/),
+    (t, p) => t.match(/#mdtemplate<([\w\W]+)>/),
     (t, p) => {
-        return presentation_template;
+        const match = t.match(/#mdtemplate<([\w\W]+)>/);
+        const template = match[1];
+        const replacement = templates[template];
+
+        if (replacement !== undefined) {
+            return replacement;
+        } else {
+            throw new Error(`Template \"${template}\" not found!`);
+        }
     }
 );
 
