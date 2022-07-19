@@ -1,5 +1,8 @@
 import * as path from "path";
 import Parser from "./parse";
+import * as fs from "fs";
+import { tmpdir } from "os";
+import templates from "./templates";
 
 const commands = {
     preparse: [],
@@ -27,9 +30,9 @@ export class Command {
         type,
         validator: (
             token: string,
-            parser: Parser,
+            parser: Parser
         ) => boolean | RegExpMatchArray,
-        acter: (token: string, parser: Parser) => string | void,
+        acter: (token: string, parser: Parser) => string | void
     ) {
         this.type = type;
         this.validator = validator;
@@ -62,7 +65,7 @@ export class Command {
 new Command(
     CommandType.PREPARSE,
     (t, p) => t.match(/(?:\s|^)<\w+>/),
-    (t, p) => `#mdvar` + t,
+    (t, p) => `#mdvar` + t
 );
 
 /* mddef */
@@ -72,7 +75,7 @@ new Command(
     (t, p) => {
         const m = t.match(/^#mddef<(.+)=(.+)>/);
         p.opts.defs[m[1]] = m[2];
-    },
+    }
 );
 
 /* mdvar */
@@ -86,7 +89,7 @@ new Command(
             throw new Error(`Undefined variable: ${match[1]}`);
         value = value || `<${match[1]}>`;
         return t.replace(match[0], value.replace("_", " "));
-    },
+    }
 );
 
 /** mdinclude */
@@ -126,7 +129,7 @@ new Command(
 
         p.opts.depth--;
         return blob;
-    },
+    }
 );
 
 new Command(
@@ -141,7 +144,7 @@ new Command(
         const link = p.titleId(title);
         p.opts.secs.push({ level, title });
         return `<span id="${link}"></span>`;
-    },
+    }
 );
 
 /* mdref */
@@ -158,7 +161,7 @@ new Command(
 
             if (i === p.opts.secs.length - 1)
                 throw new Error(
-                    `Reference to [${match[1]}] could not be resolved!`,
+                    `Reference to [${match[1]}] could not be resolved!`
                 );
         }
 
@@ -168,13 +171,29 @@ new Command(
             return `<a href="#${link}">${match[1]}</a>`;
         else if (p.opts.targetType === TargetType.MARKDOWN)
             return `[${match[1]}](#${link})`;
-    },
+    }
+);
+
+new Command(
+    CommandType.PARSE,
+    (t, p) => t.match(/#mdtemplate<([\w\W]+)>/),
+    (t, p) => {
+        const match = t.match(/#mdtemplate<([\w\W]+)>/);
+        const template = match[1];
+        const replacement = templates[template];
+
+        if (replacement !== undefined) {
+            return replacement;
+        } else {
+            throw new Error(`Template \"${template}\" not found!`);
+        }
+    }
 );
 
 new Command(
     CommandType.POSTPARSE,
     (t, p) => t.match(/#mdmaketoc/),
-    (t, p) => p.gen_toc(),
+    (t, p) => p.gen_toc()
 );
 
 module.exports = commands;

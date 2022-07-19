@@ -1,6 +1,6 @@
 {
     "name": "markdown-maker",
-    "version": "1.7.11",
+    "version": "1.8.0",
     "description": "",
     "main": "src/cltool.ts",
     "bin": {
@@ -14,7 +14,8 @@
             "node_modules/colors./*",
             "node_modules/marked/*",
             "node_modules/open/*",
-            "build/cltool.js"
+            "build/cltool.js",
+            "src/templates/*"
         ],
         "targets": [
             "node12-macos-x64",
