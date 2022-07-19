@@ -173,10 +173,7 @@ new Command(
     }
 );
 
-const presentation_template = fs
-    .readFileSync("./src/templates/presentation.html")
-    .toString();
-
+const presentation_template = require("../src/templates/presentation.js");
 new Command(
     CommandType.PARSE,
     (t, p) => t.match(/#mdpresentation/),
