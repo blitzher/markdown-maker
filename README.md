@@ -14,6 +14,7 @@ Currently supports the following features
 * Automatic Table of Contents generation with `#mdmaketoc`
 * HTML emitting with custom styling
 * Easy extention of custom commands, see `src/commands.js` for implementations
+* Usage of templates with the `#mdtemplate<...>` command.
 
 ## Usage
 Download the [latest release](https://github.com/blitzher/markdown-maker/releases), and write your document.
