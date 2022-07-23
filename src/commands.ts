@@ -4,19 +4,19 @@ import * as fs from "fs";
 import { tmpdir } from "os";
 import templates from "./templates";
 
-const commands = {
+export const commands = {
     preparse: [],
     parse: [],
     postparse: [],
 };
 
-const CommandType = {
+export const CommandType = {
     PREPARSE: 0,
     PARSE: 1,
     POSTPARSE: 2,
 };
 
-enum TargetType {
+export enum TargetType {
     HTML,
     MARKDOWN,
 }
@@ -136,7 +136,7 @@ new Command(
     CommandType.PREPARSE,
     (t, p) => t.match(/#mdlabel<(\d+),([\w\W]+)>/),
     (t, p) => {
-        if (p.opts.targetType !== TargetType.HTML) return;
+        if (p.opts.targetType !== TargetType.HTML) return "";
 
         const match = t.match(/#mdlabel<([\d]+),([\w\W]+)>/);
         const level = Number.parseInt(match[1]);
@@ -196,4 +196,44 @@ new Command(
     (t, p) => p.gen_toc()
 );
 
-module.exports = commands;
+console.log({ cwd: process.cwd() });
+console.log({ execPath: process.execPath });
+
+export function load_extensions(parser: Parser) {
+    /* global extention */
+    const global_extensions_path = path.join(process.cwd(), "extensions.js");
+    if (fs.existsSync(global_extensions_path)) {
+        const extensions = require(global_extensions_path);
+        extensions.main(templates, commands);
+
+        if (parser.opts.debug || parser.opts.verbose) {
+            console.log(
+                `Loaded global extensions from ${global_extensions_path}`.yellow
+            );
+        }
+    } else if (parser.opts.verbose) {
+        console.log(
+            `No global extensions found at ${global_extensions_path}`.red
+        );
+    }
+
+    /* project extention */
+    const project_extensions_path = path.join(parser.wd_full, "extensions.js");
+    if (fs.existsSync(project_extensions_path)) {
+        const extensions = require(project_extensions_path);
+        extensions.main(templates, Command);
+
+        if (parser.opts.debug || parser.opts.verbose) {
+            console.log(
+                `Loaded project extensions from ${project_extensions_path}`
+                    .yellow
+            );
+        }
+    } else if (parser.opts.verbose) {
+        console.log(
+            `No project extensions found at ${project_extensions_path}!`.red
+        );
+    }
+}
+
+export default { commands, load_extensions };
