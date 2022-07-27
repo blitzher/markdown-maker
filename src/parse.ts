@@ -4,7 +4,7 @@ const path = require("path"); /* for handling file paths */
 import Colors = require("colors.ts"); /* for adding colours to strings */
 Colors.enable();
 const marked = require("marked");
-const commands = require("./commands.js");
+import { commands, load_extensions } from "./commands";
 
 enum TargetType {
     HTML,
@@ -18,6 +18,7 @@ class Parser {
     parent?: Parser;
     line_num: number;
     wd: string;
+    wd_full: string;
     blobs: {
         [key: number]: string | undefined;
     };
@@ -65,6 +66,7 @@ class Parser {
 
         this.line_num = 0;
         this.wd = path.dirname(filename);
+        this.wd_full = path.resolve(this.wd);
 
         /* finished blob */
         this.blobs = {};
@@ -107,6 +109,7 @@ class Parser {
      * preprocessing, parsing and postprocess
      **/
     parse() {
+        load_extensions(this);
         if (this.opts.verbose || this.opts.debug) {
             console.log(
                 Colors.colors(
@@ -340,7 +343,7 @@ class Parser {
         return htmlFormatted;
     }
 
-    get(targetType: TargetType, callback?) {
+    get(targetType?: TargetType, callback?) {
         /* If target type is undefined, markdown is the default */
         if (targetType == undefined) targetType = TargetType.MARKDOWN;
         if (this.blobs[targetType]) {

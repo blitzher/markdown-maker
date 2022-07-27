@@ -4,6 +4,7 @@ function new_template(name: string, content: string) {
     templates[name] = content;
 }
 
+/* initialize default templates */
 const presentation_template = require("../src/templates/presentation.js");
 new_template("presentation", presentation_template);
 
