@@ -74,12 +74,15 @@ function main() {
 
         let args = [];
         Object.entries(data).forEach(([key, value]) => {
-            if (key != "src") args.push("--" + key);
-            if (typeof value != "boolean") args.push(value);
+            if (key != "src" && value !== false) {
+                args.push("--" + key);
+            }
+            if (typeof value != "boolean") {
+                args.push(value);
+            }
         });
-        args.push(data.src);
 
-        argParser.parse_args(args);
+        clargs = argParser.parse_args(args);
     } else clargs = argParser.parse_args();
 
     /* helper method for calling parser */

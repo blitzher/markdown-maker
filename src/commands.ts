@@ -196,9 +196,6 @@ new Command(
     (t, p) => p.gen_toc()
 );
 
-console.log({ cwd: process.cwd() });
-console.log({ execPath: process.execPath });
-
 export function load_extensions(parser: Parser) {
     /* global extention */
     const global_extensions_path = path.join(process.cwd(), "extensions.js");
@@ -206,11 +203,9 @@ export function load_extensions(parser: Parser) {
         const extensions = require(global_extensions_path);
         extensions.main(templates, commands);
 
-        if (parser.opts.debug || parser.opts.verbose) {
-            console.log(
-                `Loaded global extensions from ${global_extensions_path}`.yellow
-            );
-        }
+        console.log(
+            `Loaded global extensions from ${global_extensions_path}`.yellow
+        );
     } else if (parser.opts.verbose) {
         console.log(
             `No global extensions found at ${global_extensions_path}`.red
@@ -223,12 +218,9 @@ export function load_extensions(parser: Parser) {
         const extensions = require(project_extensions_path);
         extensions.main(templates, Command);
 
-        if (parser.opts.debug || parser.opts.verbose) {
-            console.log(
-                `Loaded project extensions from ${project_extensions_path}`
-                    .yellow
-            );
-        }
+        console.log(
+            `Loaded project extensions from ${project_extensions_path}`.yellow
+        );
     } else if (parser.opts.verbose) {
         console.log(
             `No project extensions found at ${project_extensions_path}!`.red
