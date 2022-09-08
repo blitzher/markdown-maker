@@ -382,6 +382,32 @@ class Parser {
     }
 }
 
+/* add extention to marked */
+marked.use({
+    renderer: {
+        blockquote(quote) {
+            /* find the ending, and if not, return the default */
+            const ending = quote.match(/\{(.+)\}\s*<\/p>/);
+            if (!ending) return `<blockquote>${quote}</blockquote>`;
+
+            const args = ending[1].split(" ");
+
+            const classes = args.filter((arg) => arg.startsWith("."));
+            const id = args.filter((arg) => arg.startsWith("#"));
+
+            const classNames = classes.map((c) => c.slice(1));
+            const classText =
+                classes.length > 0 ? `class="${classNames.join(" ")}"` : "";
+            const idText = id.length > 0 ? `id="${id[0].slice(1)}"` : "";
+
+            /* remove the ending from the quote */
+            quote = quote.replace(/\{(.+)\}\s*<\/p>/, "</p>");
+
+            return `<blockquote ${classText} ${idText}>\n${quote.trim()}</blockquote>`;
+        },
+    },
+});
+
 module.exports = Parser;
 
 export default Parser;

@@ -1,7 +1,6 @@
 import * as path from "path";
 import Parser from "./parse";
 import * as fs from "fs";
-import { tmpdir } from "os";
 import templates from "./templates";
 
 export const commands = {
@@ -201,7 +200,7 @@ export function load_extensions(parser: Parser) {
     const global_extensions_path = path.join(process.cwd(), "extensions.js");
     if (fs.existsSync(global_extensions_path)) {
         const extensions = require(global_extensions_path);
-        extensions.main(templates, commands);
+        extensions.main(templates, Command);
 
         console.log(
             `Loaded global extensions from ${global_extensions_path}`.yellow

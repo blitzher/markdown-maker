@@ -130,11 +130,11 @@ function main() {
 
     if (clargs.debug) console.dir(clargs);
 
+    /* compile once */
     if (!clargs.watch) compile(clargs.src, clargs.output);
 
+    /* watch the folder and recompile on change */
     if (clargs.watch) {
-        /* watch the folder of entry */
-        // server = wsServer();
         console.log(`Watching ${srcDirName} for changes...`.yellow);
 
         const _watcher = choki.watch(srcDirName).on("all", watcher);
