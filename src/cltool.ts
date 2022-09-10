@@ -4,6 +4,7 @@ const path = require("path"); /* for handling file paths */
 import Colors = require("colors.ts"); /* for adding colours to strings */
 import { symlinkSync } from "fs";
 import Parser from "./parse";
+import { WebSocketServer } from "ws";
 
 Colors.enable();
 const { ArgumentParser } = require("argparse"); /* for parsing clargs */
@@ -67,8 +68,10 @@ argParser.add_argument("--allow-undef", "-au", {
 //#endregion
 
 function main() {
-    // var server: refreshServer | undefined;
     let clargs;
+    let server: WebSocketServer | undefined;
+
+    /* Read config file or parse args from cmd-line */
     if (fs.existsSync(configFileName)) {
         let data = JSON.parse(fs.readFileSync(configFileName)).opts;
 
@@ -112,7 +115,10 @@ function main() {
 
         try {
             compile(clargs.src, clargs.output, () => {
-                // if (server.refresh) server.refresh();
+                /* after compile, send refresh command to clients */
+                server.clients.forEach((client) => {
+                    if (client.OPEN) client.send("refresh");
+                });
             });
         } catch (e) {
             console.log(e.message);
@@ -126,8 +132,6 @@ function main() {
         clargs.src = path.join(clargs.src, clargs.entry);
     }
 
-    const srcDirName = path.dirname(clargs.src);
-
     if (clargs.debug) console.dir(clargs);
 
     /* compile once */
@@ -135,7 +139,9 @@ function main() {
 
     /* watch the folder and recompile on change */
     if (clargs.watch) {
+        const srcDirName = path.dirname(clargs.src);
         console.log(`Watching ${srcDirName} for changes...`.yellow);
+        server = new WebSocketServer({ port: 7788 });
 
         const _watcher = choki.watch(srcDirName).on("all", watcher);
         try {

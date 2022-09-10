@@ -63,7 +63,7 @@ export class Command {
 /* variable shorthand */
 new Command(
     CommandType.PREPARSE,
-    (t, p) => t.match(/(?:\s|^)<\w+>/),
+    (t, p) => t.match(/(?:\s|^)<.+>/),
     (t, p) => `#mdvar` + t
 );
 
@@ -80,9 +80,9 @@ new Command(
 /* mdvar */
 new Command(
     CommandType.PARSE,
-    (t, p) => t.match(/^#mdvar<(\w+)>/) || t.match(/^<(\w+)>/),
+    (t, p) => t.match(/^#mdvar<.+>/),
     (t, p) => {
-        const match = t.match(/#mdvar<(\w+)>/);
+        const match = t.match(/#mdvar<(.+)>/);
         let value = p.opts.defs[match[1]];
         if (!value && !p.opts.allow_undef)
             throw new Error(`Undefined variable: ${match[1]}`);
@@ -202,10 +202,11 @@ export function load_extensions(parser: Parser) {
         const extensions = require(global_extensions_path);
         extensions.main(templates, Command);
 
-        console.log(
-            `Loaded global extensions from ${global_extensions_path}`.yellow
-        );
-    } else if (parser.opts.verbose) {
+        if (parser.opts.verbose)
+            console.log(
+                `Loaded global extensions from ${global_extensions_path}`.yellow
+            );
+    } else if (parser.opts.debug) {
         console.log(
             `No global extensions found at ${global_extensions_path}`.red
         );
@@ -217,10 +218,12 @@ export function load_extensions(parser: Parser) {
         const extensions = require(project_extensions_path);
         extensions.main(templates, Command);
 
-        console.log(
-            `Loaded project extensions from ${project_extensions_path}`.yellow
-        );
-    } else if (parser.opts.verbose) {
+        if (parser.opts.verbose)
+            console.log(
+                `Loaded project extensions from ${project_extensions_path}`
+                    .yellow
+            );
+    } else if (parser.opts.debug) {
         console.log(
             `No project extensions found at ${project_extensions_path}!`.red
         );

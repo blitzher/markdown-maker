@@ -39,6 +39,7 @@ class Parser {
         toc_level: number;
         allow_undef: boolean;
         html: boolean;
+        watch: boolean;
         targetType: TargetType | undefined;
         only_warn: boolean;
         parent?: Parser;
@@ -84,6 +85,7 @@ class Parser {
             toc_level: 3,
             allow_undef: false,
             html: false,
+            watch: false,
             targetType: undefined,
             only_warn: false,
             parent: undefined,
@@ -313,7 +315,7 @@ class Parser {
     }
 
     /* output the parsed document to bundle */
-    to(bundleName, cb) {
+    to(bundleName: string, cb: (content: string) => void) {
         const dir = path.dirname(bundleName);
         var called = false;
         if (!cb) cb = () => {};
@@ -339,7 +341,12 @@ class Parser {
 
     html() {
         const htmlFormatted = marked(this.get(TargetType.HTML));
-
+        if (this.opts.watch) {
+            return (
+                `<script>w=new WebSocket("ws:localhost:7788");w.addEventListener("message",(e)=>{if(e.data=="refresh")location.reload();});</script>\n` +
+                htmlFormatted
+            );
+        }
         return htmlFormatted;
     }
 
