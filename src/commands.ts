@@ -3,7 +3,11 @@ import Parser from "./parse";
 import * as fs from "fs";
 import templates from "./templates";
 
-export const commands = {
+export const commands: {
+    preparse: Command[];
+    parse: Command[];
+    postparse: Command[];
+} = {
     preparse: [],
     parse: [],
     postparse: [],
@@ -22,16 +26,13 @@ export enum TargetType {
 
 export class Command {
     type: number;
-    validator: (token: string, parser: Parser) => boolean | RegExpMatchArray;
-    acter: (token: string, parser: Parser) => string | void;
+    validator: RegExp;
+    acter: (token: RegExpMatchArray, parser: Parser) => string | void;
 
     constructor(
         type,
-        validator: (
-            token: string,
-            parser: Parser
-        ) => boolean | RegExpMatchArray,
-        acter: (token: string, parser: Parser) => string | void
+        validator: RegExp,
+        acter: (token: RegExpMatchArray, parser: Parser) => string | void
     ) {
         this.type = type;
         this.validator = validator;
@@ -51,10 +52,6 @@ export class Command {
         }
     }
 
-    valid(token, parser) {
-        return this.validator(token, parser);
-    }
-
     act(token, parser) {
         return this.acter(token, parser);
     }
@@ -63,16 +60,15 @@ export class Command {
 /* variable shorthand */
 new Command(
     CommandType.PREPARSE,
-    (t, p) => t.match(/(?:\s|^)<.+>/),
+    /(?:\s|^)<.+>/,
     (t, p) => `#mdvar` + t
 );
 
 /* mddef */
 new Command(
     CommandType.PARSE,
-    (t, p) => t.match(/^#mddef<(.+)=(.+)>/),
-    (t, p) => {
-        const m = t.match(/^#mddef<(.+)=(.+)>/);
+    /^#mddef<(.+)=(.+)>/,
+    (m, p) => {
         p.opts.defs[m[1]] = m[2];
     }
 );
@@ -80,68 +76,63 @@ new Command(
 /* mdvar */
 new Command(
     CommandType.PARSE,
-    (t, p) => t.match(/^#mdvar<.+>/),
-    (t, p) => {
-        const match = t.match(/#mdvar<(.+)>/);
-        let value = p.opts.defs[match[1]];
+    /^#mdvar<(.+)>/,
+    (m, p) => {
+        let value = p.opts.defs[m[1]];
         if (!value && !p.opts.allow_undef)
-            throw new Error(`Undefined variable: ${match[1]}`);
-        value = value || `<${match[1]}>`;
-        return t.replace(match[0], value.replace("_", " "));
+            throw new Error(`Undefined variable: ${m[1]}`);
+        return value = value || `<${m[1]}>`;
     }
 );
 
 /** mdinclude */
 new Command(
     CommandType.PARSE,
-    (t, p) => t.match(/^#mdinclude<([\w.\/-]+)(?:[,\s]+([\w]+))?>/),
-    (t, p) => {
+    /^#mdinclude<([\w.\/-]+)(?:[,\s]+([\w]+))?>/,
+    (match, parser) => {
         /* increase the current recursive depth */
-        p.opts.depth++;
+        parser.opts.depth++;
 
-        if (p.opts.depth > p.opts.max_depth) {
+        if (parser.opts.depth > parser.opts.max_depth) {
             throw new Error("max depth exceeded!");
         }
 
         /* get the matching group */
-        const match = t.match(/^#mdinclude<([\w.\/-]+)(?:[,\s]+([\w]+))?>/);
-
         const [_, name, condition] = match;
 
         /* implement conditional imports */
-        if (condition && !p.opts.args.includes(condition)) return;
+        if (condition && !parser.opts.args.includes(condition)) return;
 
-        const recursiveParser = new Parser(path.join(p.wd, name), p.opts, {
-            parent: p,
+        const recursiveParser = new Parser(path.join(parser.wd, name), parser.opts, {
+            parent: parser,
         });
 
         /* keep the options the same */
-        recursiveParser.opts = p.opts;
-        recursiveParser.parent = p;
+        recursiveParser.opts = parser.opts;
+        recursiveParser.parent = parser;
 
         const fileType = path.extname(recursiveParser.file);
 
         const blob =
             fileType === ".md"
-                ? recursiveParser.get(p.opts.targetType)
+                ? recursiveParser.get(parser.opts.targetType)
                 : recursiveParser.raw;
 
-        p.opts.depth--;
+        parser.opts.depth--;
         return blob;
     }
 );
 
 new Command(
     CommandType.PREPARSE,
-    (t, p) => t.match(/#mdlabel<(\d+),([\w\W]+)>/),
-    (t, p) => {
-        if (p.opts.targetType !== TargetType.HTML) return "";
+    /#mdlabel<(\d+),([\w\W]+)>/,
+    (match, parser) => {
+        if (parser.opts.targetType !== TargetType.HTML) return "";
 
-        const match = t.match(/#mdlabel<([\d]+),([\w\W]+)>/);
         const level = Number.parseInt(match[1]);
         const title = match[2];
-        const link = p.titleId(title);
-        p.opts.secs.push({ level, title });
+        const link = parser.titleId(title);
+        parser.opts.secs.push({ level, title });
         return `<span id="${link}"></span>`;
     }
 );
@@ -149,35 +140,33 @@ new Command(
 /* mdref */
 new Command(
     CommandType.PARSE,
-    (t, p) => t.match(/#mdref<([\w\W]+)>/),
+    /#mdref<([\w\W]+)>/,
 
-    (t, p) => {
-        const match = t.match(/#mdref<([\w\W]+)>/);
-
-        for (let i = 0; i < p.opts.secs.length; i++) {
-            let { title } = p.opts.secs[i];
+    (match, parser) => {
+        for (let i = 0; i < parser.opts.secs.length; i++) {
+            let { title } = parser.opts.secs[i];
             if (title === match[1]) break;
 
-            if (i === p.opts.secs.length - 1)
+            if (i === parser.opts.secs.length - 1)
                 throw new Error(
                     `Reference to [${match[1]}] could not be resolved!`
                 );
         }
 
         match[1] = match[1].replace("_", " ");
-        const link = p.titleId(match[1]);
-        if (p.opts.targetType === TargetType.HTML)
+        const link = parser.titleId(match[1]);
+        if (parser.opts.targetType === TargetType.HTML)
             return `<a href="#${link}">${match[1]}</a>`;
-        else if (p.opts.targetType === TargetType.MARKDOWN)
+        else if (parser.opts.targetType === TargetType.MARKDOWN)
             return `[${match[1]}](#${link})`;
     }
 );
 
 new Command(
     CommandType.PARSE,
-    (t, p) => t.match(/#mdtemplate<([\w\W]+)>/),
-    (t, p) => {
-        const match = t.match(/#mdtemplate<([\w\W]+)>/);
+    /#mdtemplate<([\w\W]+)>/,
+    (match, parser) => {
+
         const template = match[1];
         const replacement = templates[template];
 
@@ -191,7 +180,7 @@ new Command(
 
 new Command(
     CommandType.POSTPARSE,
-    (t, p) => t.match(/#mdmaketoc/),
+    /#mdmaketoc/,
     (t, p) => p.gen_toc()
 );
 

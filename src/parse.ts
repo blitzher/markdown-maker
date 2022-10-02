@@ -4,7 +4,7 @@ const path = require("path"); /* for handling file paths */
 import Colors = require("colors.ts"); /* for adding colours to strings */
 Colors.enable();
 const marked = require("marked");
-import { commands, load_extensions } from "./commands";
+import { Command, commands, load_extensions } from "./commands";
 
 enum TargetType {
     HTML,
@@ -143,11 +143,10 @@ class Parser {
         return __blob;
     }
 
-    mainparse(blob) {
+    mainparse(blob: string) {
         if (this.opts.verbose || this.opts.debug) {
             console.debug(`beginning mainparse of '${this.file}'`.blue);
         }
-        let __blob = "";
 
         /* main parser instance loop */
         blob.split("\n").forEach((line, lnum) => {
@@ -162,17 +161,7 @@ class Parser {
 
                 /* implement toc level */
                 let level = titleMatch[1].length;
-
-                /**
-                 * parse elements of title
-                 * such as variables */
-                let title = titleMatch[2]
-                    .trim()
-                    .split(" ")
-                    .map((s) =>
-                        s.startsWith(Parser.TOKEN) ? this.parseToken(s) : s
-                    )
-                    .join("_");
+                let title = titleMatch[2];
 
                 this.opts.secs.push({ level, title });
 
@@ -180,101 +169,51 @@ class Parser {
                     console.log("updated sections:", { level, title });
                 }
             }
-
-            let __line_tokens = [];
-            /* split line into tokens */
-            line.split(" ").forEach((token) => {
-                /* if token is not #md token,
-                 * just add it and continue */
-                if (token.startsWith(Parser.TOKEN)) {
-                    token = this.parseToken(token);
-                }
-
-                __line_tokens.push(token);
-            });
-            /* put line back properly */
-            __blob += __line_tokens.join(" ") + "\n";
         });
 
-        return __blob;
+        return this.parse_commands(blob, commands.parse);
     }
 
-    parseToken(token) {
-        /* iterate over all commands,
-         * and if command is valid, execute it */
+    parse_commands(blob: string, commands: Command[]) {
+        commands.forEach(command => {
 
-        if (this.opts.verbose || this.opts.debug)
-            console.log("found mdtoken: " + token);
+            /* Add global flag to RegExp */
+            const re = new RegExp(command.validator.source, (command.validator.flags || "") + "g");
+            const match_array = blob.match(re);
+            if (match_array && match_array.length > 0) {
+                match_array.forEach(match => {
+                    /* Call command acter and replace content of blob */
+                    const match_no_global = match.match(command.validator);
+                    if (!match_no_global) return;
+                    const match_length = match.length;
+                    const match_index = match_no_global.index;
 
-        for (let i = 0; i < commands.parse.length; i++) {
-            const command = commands.parse[i];
-
-            if (command.valid(token, this)) {
-                return command.act(token, this);
+                    const new_content = command.act(match_no_global, this) || "";
+                    blob = splice(blob, match_index, match_length, new_content);
+                });
             }
-        }
-
-        /* check if the command is for later */
-        for (let i = 0; i < commands.postparse.length; i++) {
-            const command = commands.postparse[i];
-
-            if (command.valid(token, this)) {
-                return token;
-            }
-        }
-
-        throw new SyntaxError(`Unknown token: ${token}`);
+        });
+        return blob;
     }
 
     preprocess(blob) {
         if (this.opts.verbose || this.opts.debug) {
             console.debug(`beginning preprocess of '${this.file}'`.blue);
         }
-        let __blob = "";
-        const lines = blob.split("\n");
 
-        lines.forEach((line) => {
-            let __line_tokens = [];
-            line.split(" ").forEach((token) => {
-                for (const command of commands.preparse) {
-                    if (command.valid(token, this)) {
-                        token = command.act(token, this);
-                    }
-                }
-
-                __line_tokens.push(token);
-            });
-            __blob += __line_tokens.join(" ") + "\n";
-        });
-        return __blob;
+        return this.parse_commands(blob, commands.preparse);
     }
 
     postprocess(blob) {
         if (this.opts.verbose || this.opts.debug) {
             console.debug(`beginning postprocess of '${this.file}'`.blue);
         }
-        let __blob = "";
-        const lines = blob.split("\n");
 
-        lines.forEach((line) => {
-            let __line_tokens = [];
-            line.split(" ").forEach((token) => {
-                // only look
-
-                for (const command of commands.postparse) {
-                    if (command.valid(token, this)) {
-                        token = command.act(token, this);
-                    }
-                }
-
-                __line_tokens.push(token);
-            });
-            __blob += __line_tokens.join(" ") + "\n";
-        });
+        blob = this.parse_commands(blob, commands.postparse);
 
         /* remove double empty lines */
-        __blob = this.remove_double_blank_lines(__blob);
-        return __blob;
+        blob = this.remove_double_blank_lines(blob);
+        return blob;
     }
 
     titleId(title: string) {
@@ -318,7 +257,7 @@ class Parser {
     to(bundleName: string, cb: (content: string) => void) {
         const dir = path.dirname(bundleName);
         var called = false;
-        if (!cb) cb = () => {};
+        if (!cb) cb = () => { };
 
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir);
@@ -371,9 +310,8 @@ class Parser {
                 let p: Parser = this;
 
                 do {
-                    traceback += `\n...on line ${p.line_num + 1} in ${
-                        p.file
-                    }`.grey(15);
+                    traceback += `\n...on line ${p.line_num + 1} in ${p.file
+                        }`.grey(15);
                     if (p.parent) p = p.parent;
                 } while (p.parent);
 
@@ -387,6 +325,11 @@ class Parser {
             }
         }
     }
+}
+
+function splice(str: string, startIndex: number, width: number, newSubStr: string) {
+    return str.slice(0, startIndex) + newSubStr + str.slice(startIndex + Math.abs(width));
+
 }
 
 /* add extention to marked */
