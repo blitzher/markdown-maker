@@ -10,7 +10,7 @@ describe("Managing blank lines", () => {
 */
 
 util.put(
-    "module.exports = {main: (templates, Command) => {templates['hi'] = 'hello'; new Command(0, (t,p) => t.match(/#test_cmd/), (t,p) => 'yeet');}};",
+    "module.exports = {main: (templates, Command) => {templates['hi'] = 'hello'; new Command(0, /#test_cmd/, (t,p) => 'yeet');}};",
     "extensions.js"
 );
 

@@ -179,24 +179,20 @@ class Parser {
 
             /* Add global flag to RegExp */
             const re = new RegExp(command.validator.source, (command.validator.flags || "") + "g");
-            const match_array = blob.match(re);
-            if (match_array && match_array.length > 0) {
-                match_array.forEach(match => {
-                    /* Call command acter and replace content of blob */
-                    const match_no_global = match.match(command.validator);
-                    if (!match_no_global) return;
-                    const match_length = match.length;
-                    const match_index = match_no_global.index;
+            blob = blob.replace(re, ((...args) => command.act(args, this) || ""));
 
-                    const new_content = command.act(match_no_global, this) || "";
-                    blob = splice(blob, match_index, match_length, new_content);
-                });
-            }
         });
         return blob;
     }
 
-    preprocess(blob) {
+    parse_all_commands(blob: string, commands: { [key: string]: Command[] }) {
+        Object.keys(commands).forEach(key => {
+            blob = this.parse_commands(blob, commands[key]);
+        });
+        return blob;
+    }
+
+    preprocess(blob: string) {
         if (this.opts.verbose || this.opts.debug) {
             console.debug(`beginning preprocess of '${this.file}'`.blue);
         }
@@ -204,7 +200,7 @@ class Parser {
         return this.parse_commands(blob, commands.preparse);
     }
 
-    postprocess(blob) {
+    postprocess(blob: string) {
         if (this.opts.verbose || this.opts.debug) {
             console.debug(`beginning postprocess of '${this.file}'`.blue);
         }
@@ -213,6 +209,7 @@ class Parser {
 
         /* remove double empty lines */
         blob = this.remove_double_blank_lines(blob);
+        blob = blob.trimEnd() + "\n\n";
         return blob;
     }
 
@@ -233,14 +230,19 @@ class Parser {
         const hor = " ".repeat(tabSize);
 
         this.opts.secs.forEach((sec) => {
+
+
+
             if (sec.level > this.opts.toc_level) return;
-            const link = this.titleId(sec.title);
-            const title = sec.title.replace(/_/g, " ");
+            let title = sec.title.replace(/_/g, " ");
+            title = this.parse_all_commands(title, commands);
+            const link = this.titleId(title);
 
             let __line =
                 hor.repeat(Math.max(sec.level - 1, 0)) +
                 beg +
                 `[${title}](#${link})`;
+
             __blob.push(__line);
         });
         return __blob.join("\n");
@@ -327,8 +329,11 @@ class Parser {
     }
 }
 
-function splice(str: string, startIndex: number, width: number, newSubStr: string) {
-    return str.slice(0, startIndex) + newSubStr + str.slice(startIndex + Math.abs(width));
+export function splice(str: string, startIndex: number, width: number, newSubStr: string) {
+    const start = str.slice(0, startIndex);
+    const end = str.slice(startIndex + width);
+    return start + newSubStr + end;
+
 
 }
 

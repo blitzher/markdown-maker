@@ -27,12 +27,12 @@ export enum TargetType {
 export class Command {
     type: number;
     validator: RegExp;
-    acter: (token: RegExpMatchArray, parser: Parser) => string | void;
+    acter: (match: RegExpMatchArray, parser: Parser) => string | void;
 
     constructor(
         type,
         validator: RegExp,
-        acter: (token: RegExpMatchArray, parser: Parser) => string | void
+        acter: (match: RegExpMatchArray, parser: Parser) => string | void
     ) {
         this.type = type;
         this.validator = validator;
@@ -52,8 +52,8 @@ export class Command {
         }
     }
 
-    act(token, parser) {
-        return this.acter(token, parser);
+    act(match, parser) {
+        return this.acter(match, parser);
     }
 }
 
@@ -61,22 +61,22 @@ export class Command {
 new Command(
     CommandType.PREPARSE,
     /(?:\s|^)<.+>/,
-    (t, p) => `#mdvar` + t
+    (match, parser) => `#mdvar` + match[0]
 );
 
 /* mddef */
 new Command(
     CommandType.PARSE,
-    /^#mddef<(.+)=(.+)>/,
+    /#mddef<(.+)=(.+)>/,
     (m, p) => {
-        p.opts.defs[m[1]] = m[2];
+        p.opts.defs[m[1]] = m[2].replace("_", " ");
     }
 );
 
 /* mdvar */
 new Command(
     CommandType.PARSE,
-    /^#mdvar<(.+)>/,
+    /#mdvar<(.+)>/,
     (m, p) => {
         let value = p.opts.defs[m[1]];
         if (!value && !p.opts.allow_undef)
@@ -88,7 +88,7 @@ new Command(
 /** mdinclude */
 new Command(
     CommandType.PARSE,
-    /^#mdinclude<([\w.\/-]+)(?:[,\s]+([\w]+))?>/,
+    /#mdinclude<([\w.\/-]+)(?:[,\s]+([\w]+))?>/,
     (match, parser) => {
         /* increase the current recursive depth */
         parser.opts.depth++;
@@ -180,7 +180,7 @@ new Command(
 
 new Command(
     CommandType.POSTPARSE,
-    /#mdmaketoc/,
+    /#mdmaketoc(?:<>)?/,
     (t, p) => p.gen_toc()
 );
 
