@@ -1,11 +1,6 @@
 const util = require("./tester.test.js");
 
 describe("Basic features", () => {
-    it("should raise an error if invalid token", () => {
-        util.assert.throws(() => {
-            const output = new util.Parser("#mdNON<>").get();
-        }, SyntaxError);
-    });
     it("should join two files with include", () => {
         util.put("hello\n#mdinclude<sample2.md>", "sample1.md");
         util.put("there", "sample2.md");
@@ -35,12 +30,12 @@ describe("Basic features", () => {
         );
     });
     it("should allow variables in toc", () => {
-        const parser = new util.Parser(
+        const output = new util.Parser(
             "#mddef<name=Foobar>\n# mr. #mdvar<name>\n#mdmaketoc<>"
-        );
+        ).get();
 
         util.assert.strictEqual(
-            parser.get(),
+            output,
             "\n# mr. Foobar\n* [mr. Foobar](#mr-foobar)\n\n"
         );
     });
