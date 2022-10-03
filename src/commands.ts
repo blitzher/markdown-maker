@@ -3,6 +3,15 @@ import Parser from "./parse";
 import * as fs from "fs";
 import templates from "./templates";
 
+export class MDMError extends Error {
+    match: RegExpMatchArray
+    constructor(message: string, match: RegExpMatchArray) {
+        super(message);
+        this.name = "MDMError";
+        this.match = match;
+    }
+}
+
 export const commands: {
     preparse: Command[];
     parse: Command[];
@@ -60,8 +69,8 @@ export class Command {
 /* variable shorthand */
 new Command(
     CommandType.PREPARSE,
-    /(?:\s|^)<.+>/,
-    (match, parser) => `#mdvar` + match[0]
+    /(\s|^)<(.+)>/,
+    (match, parser) => `${match[1]}#mdvar<${match[2]}>`
 );
 
 /* mddef */
@@ -123,9 +132,10 @@ new Command(
     }
 );
 
+/* mdlabel */
 new Command(
     CommandType.PREPARSE,
-    /#mdlabel<(\d+),([\w\W]+)>/,
+    /#mdlabel<(\d+),\s?(.+)>/,
     (match, parser) => {
         if (parser.opts.targetType !== TargetType.HTML) return "";
 
@@ -140,7 +150,7 @@ new Command(
 /* mdref */
 new Command(
     CommandType.PARSE,
-    /#mdref<([\w\W]+)>/,
+    /#mdref<(.+)>/,
 
     (match, parser) => {
         for (let i = 0; i < parser.opts.secs.length; i++) {
@@ -162,6 +172,7 @@ new Command(
     }
 );
 
+/* mdtemplate */
 new Command(
     CommandType.PARSE,
     /#mdtemplate<([\w\W]+)>/,
@@ -173,7 +184,7 @@ new Command(
         if (replacement !== undefined) {
             return replacement;
         } else {
-            throw new Error(`Template \"${template}\" not found!`);
+            throw new MDMError(`Template \"${template}\" not found!`, match);
         }
     }
 );

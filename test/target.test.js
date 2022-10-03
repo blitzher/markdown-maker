@@ -26,11 +26,9 @@ describe("Target specific functionality", () => {
 			util.assert.strictEqual(md, '\n\n')
 		});
 		it("Should include #mdref to title elements in markdown", () => {
-			const parser = new util.Parser("# Some Title!\n#mdref<Some_Title!>");
+			const output = new util.Parser("# Some Title!\n#mdref<Some Title!>").get();
 
-			const md = parser.get(util.TargetType.MARKDOWN);
-
-			util.assert.strictEqual(md, '# Some Title!\n[Some Title!](#some-title)\n\n')
+			util.assert.strictEqual(output, '# Some Title!\n[Some Title!](#some-title)\n\n')
 		});
 
 	})

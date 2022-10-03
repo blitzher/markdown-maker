@@ -4,7 +4,7 @@ const path = require("path"); /* for handling file paths */
 import Colors = require("colors.ts"); /* for adding colours to strings */
 Colors.enable();
 const marked = require("marked");
-import { Command, commands, load_extensions } from "./commands";
+import { Command, commands, load_extensions, MDMError } from "./commands";
 
 enum TargetType {
     HTML,
@@ -248,6 +248,10 @@ class Parser {
         return __blob.join("\n");
     }
 
+    line_num_from_index(index: number) {
+        return this.raw.substring(0, index).split("\n").length + 1;
+    }
+
     remove_double_blank_lines(blob) {
         /* replace all triple newlines, and EOF by double newline */
         blob = blob.replace(/(\r\n|\n){3,}/g, "\n\n");
@@ -312,8 +316,11 @@ class Parser {
                 let p: Parser = this;
 
                 do {
-                    traceback += `\n...on line ${p.line_num + 1} in ${p.file
-                        }`.grey(15);
+                    if (error instanceof MDMError)
+                        traceback += `\n...on line ${p.line_num_from_index(error.match.index)} in ${p.file
+                            }`.grey(15);
+                    else
+                        traceback += `\n...on line ${p.line_num} in ${p.file}`.grey(15);
                     if (p.parent) p = p.parent;
                 } while (p.parent);
 
