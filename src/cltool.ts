@@ -2,7 +2,6 @@ const fs = require("fs"); /* for handling reading of files */
 const path = require("path"); /* for handling file paths */
 
 import Colors = require("colors.ts"); /* for adding colours to strings */
-import { symlinkSync } from "fs";
 import Parser from "./parse";
 import { WebSocketServer } from "ws";
 

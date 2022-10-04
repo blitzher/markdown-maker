@@ -31,7 +31,7 @@ describe("Basic features", () => {
     });
     it("should allow variables in toc", () => {
         const output = new util.Parser(
-            "#mddef<name=Foobar>\n# mr. #mdvar<name>\n#mdmaketoc<>"
+            "#mddef<name= Foobar>\n# mr. #mdvar<name>\n#mdmaketoc<>"
         ).get();
 
         util.assert.strictEqual(

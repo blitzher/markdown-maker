@@ -13,7 +13,6 @@
             "node_modules/colors/*",
             "node_modules/colors./*",
             "node_modules/marked/*",
-            "node_modules/open/*",
             "build/cltool.js",
             "src/templates/*"
         ],
@@ -53,7 +52,7 @@
         "colors": "^1.4.0",
         "colors.ts": "^1.0.20",
         "marked": "^2.0.1",
-        "open": "^8.0.5",
+        "require-runtime": "^2.0.0",
         "ws": "^8.8.1"
     },
     "devDependencies": {

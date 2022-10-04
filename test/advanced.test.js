@@ -1,16 +1,7 @@
 const util = require("./tester.test.js");
-const fs = require("fs");
-/* 
-describe("Managing blank lines", () => {
-    it("should always end with 2 blank lines, even with no input", () => {
-        const output = new util.Parser("").get();
-        util.assert.strictEqual(output, "\n\n")
-    });
-
-*/
 
 util.put(
-    "module.exports = {main: (templates, Command) => {templates['hi'] = 'hello'; new Command(0, /#test_cmd/, (t,p) => 'yeet');}};",
+    "module.exports = {main: (new_template, new_command) => {new_template('hi', 'hello'); new_command(/#test_cmd/, (t,p) => 'yeet', 0);}};",
     "extensions.js"
 );
 

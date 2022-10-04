@@ -1,6 +1,11 @@
 const templates: { [key: string]: string } = {};
 
-function new_template(name: string, content: string) {
+/**
+ * Function to add a template to the templates object. Similar to definitions and variables, but reside as an extension.
+ * @param name The name of the template
+ * @param content The replacement string
+ */
+export function new_template(name: string, content: string) {
     templates[name] = content;
 }
 

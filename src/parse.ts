@@ -174,24 +174,6 @@ class Parser {
         return this.parse_commands(blob, commands.parse);
     }
 
-    parse_commands(blob: string, commands: Command[]) {
-        commands.forEach(command => {
-
-            /* Add global flag to RegExp */
-            const re = new RegExp(command.validator.source, (command.validator.flags || "") + "g");
-            blob = blob.replace(re, ((...args) => command.act(args, this) || ""));
-
-        });
-        return blob;
-    }
-
-    parse_all_commands(blob: string, commands: { [key: string]: Command[] }) {
-        Object.keys(commands).forEach(key => {
-            blob = this.parse_commands(blob, commands[key]);
-        });
-        return blob;
-    }
-
     preprocess(blob: string) {
         if (this.opts.verbose || this.opts.debug) {
             console.debug(`beginning preprocess of '${this.file}'`.blue);
@@ -210,6 +192,24 @@ class Parser {
         /* remove double empty lines */
         blob = this.remove_double_blank_lines(blob);
         blob = blob.trimEnd() + "\n\n";
+        return blob;
+    }
+
+    parse_commands(blob: string, commands: Command[]) {
+        commands.forEach(command => {
+
+            /* Add global flag to RegExp */
+            const re = new RegExp(command.validator.source, (command.validator.flags || "") + "g");
+            blob = blob.replace(re, ((...args) => command.act(args, this) || ""));
+
+        });
+        return blob;
+    }
+
+    parse_all_commands(blob: string, commands: { [key: string]: Command[] }) {
+        Object.keys(commands).forEach(key => {
+            blob = this.parse_commands(blob, commands[key]);
+        });
         return blob;
     }
 
