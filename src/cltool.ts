@@ -12,7 +12,7 @@ const choki = require("chokidar");
 
 export const argParser = new ArgumentParser({
     description: "Markdown bundler, with extra options",
-    prog: process.argv[0].split(path.sep).pop(),
+    prog: "mdparse",
 });
 
 const configFileName = ".mdmconfig.json";
@@ -26,7 +26,7 @@ argParser.add_argument("-v", "--verbose", {
     action: "store_true",
     help: "enable verbose output",
 });
-argParser.add_argument("-db", "--debug", {
+argParser.add_argument("-D", "--debug", {
     action: "store_true",
     help: "enable debugging information",
 });
@@ -47,22 +47,22 @@ argParser.add_argument("-w", "--watch", {
     action: "store_true",
     help: "recompile after a change in target target file or directory.",
 });
-argParser.add_argument("-uu", "--use-underscore", {
+argParser.add_argument("-u", "--use-underscore", {
     action: "store_true",
     help: "set the parser to use '_' as seperator in ids for Table of Content. If the links in the table does not work, this is likely to be the issue.",
 });
-argParser.add_argument("--toc-level", {
+argParser.add_argument("-t", "--toc-level", {
     help: "the section level of the table of contents, by default is 3",
     default: 3,
     type: "int",
 });
-argParser.add_argument("--html", {
+argParser.add_argument("-H", "--html", {
     action: "store_true",
     help: "compile HTML from the parsed markdown",
 });
-argParser.add_argument("--allow-undef", "-au", {
+argParser.add_argument("--allow-undefined", "-A", {
     action: "store_true",
-    help: "allow undefined variables. Mostly useful for typing inline html tags, and other non-strictly markdown related uses",
+    help: "allow the use of the \"<thing>\" syntax, without raising an error when 'thing' is not a variable. Mostly useful when writing inline html tags, and other non-strictly markdown related uses",
 });
 //#endregion
 

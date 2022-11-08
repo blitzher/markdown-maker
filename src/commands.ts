@@ -4,10 +4,8 @@ import * as fs from "fs";
 import templates, { new_template } from "./templates";
 import requireRuntime from "require-runtime";
 
-
-
 export class MDMError extends Error {
-    match: RegExpMatchArray
+    match: RegExpMatchArray;
     constructor(message: string, match: RegExpMatchArray) {
         super(message);
         this.name = "MDMError";
@@ -29,7 +27,7 @@ export enum CommandType {
     PREPARSE,
     PARSE,
     POSTPARSE,
-};
+}
 
 export enum TargetType {
     HTML,
@@ -44,7 +42,7 @@ export class Command {
     constructor(
         validator: RegExp,
         acter: (match: RegExpMatchArray, parser: Parser) => string | void,
-        type: CommandType
+        type: CommandType,
     ) {
         this.type = type;
         this.validator = validator;
@@ -78,7 +76,7 @@ new Command(
 
 /* mddef */
 new Command(
-    /#mddef< *(.+?) *= *(.+?) *>/, /* first .+ is lazy so as to not match following spaces */
+    /#mddef< *(.+?) *= *(.+?) *>/ /* first .+ is lazy so as to not match following spaces */,
     (match, parser) => {
         parser.opts.defs[match[1]] = match[2].replace("_", " ");
     },
@@ -90,16 +88,15 @@ new Command(
     /#mdvar<(.+?)>/,
     (match, parser) => {
         let value = parser.opts.defs[match[1]];
-        if (!value && !parser.opts.allow_undef)
+        if (!value && !parser.opts.allow_undefined)
             throw new Error(`Undefined variable: ${match[1]}`);
-        return value = value || `<${match[1]}>`;
+        return (value = value || `<${match[1]}>`);
     },
     CommandType.PARSE,
 );
 
 /** mdinclude */
 new Command(
-
     /#mdinclude<([\w.\/-]+)(?:[,\s]+([\w]+))?>/,
     (match, parser) => {
         /* increase the current recursive depth */
@@ -115,9 +112,13 @@ new Command(
         /* implement conditional imports */
         if (condition && !parser.opts.args.includes(condition)) return;
 
-        const recursiveParser = new Parser(path.join(parser.wd, name), parser.opts, {
-            parent: parser,
-        });
+        const recursiveParser = new Parser(
+            path.join(parser.wd, name),
+            parser.opts,
+            {
+                parent: parser,
+            },
+        );
 
         /* keep the options the same */
         recursiveParser.opts = parser.opts;
@@ -162,7 +163,7 @@ new Command(
 
             if (i === parser.opts.secs.length - 1)
                 throw new Error(
-                    `Reference to [${match[1]}] could not be resolved!`
+                    `Reference to [${match[1]}] could not be resolved!`,
                 );
         }
 
@@ -180,7 +181,6 @@ new Command(
 new Command(
     /#mdtemplate<([\w\W]+)>/,
     (match, parser) => {
-
         const template = match[1];
         const replacement = templates[template];
 
@@ -208,11 +208,12 @@ export function load_extensions(parser: Parser) {
 
         if (parser.opts.verbose)
             console.log(
-                `Loaded global extensions from ${global_extensions_path}`.yellow
+                `Loaded global extensions from ${global_extensions_path}`
+                    .yellow,
             );
     } else if (parser.opts.debug) {
         console.log(
-            `No global extensions found at ${global_extensions_path}`.red
+            `No global extensions found at ${global_extensions_path}`.red,
         );
     }
 
@@ -225,17 +226,17 @@ export function load_extensions(parser: Parser) {
         if (parser.opts.verbose)
             console.log(
                 `Loaded project extensions from ${project_extensions_path}`
-                    .yellow
+                    .yellow,
             );
     } else if (parser.opts.debug) {
         console.log(
-            `No project extensions found at ${project_extensions_path}!`.red
+            `No project extensions found at ${project_extensions_path}!`.red,
         );
     }
 }
 
 /**
- * 
+ *
  * @param regex The regex to match the command
  * @param acter The function called when a match is found. Takes two arguments, `match` and `parser`. `match` is the result of the regex match, and `parser` is the parser instance. The function should return the replacement string.
  * @param type When the command should be run. Can be `CommandType.PREPARSE`, `CommandType.PARSE`, or `CommandType.POSTPARSE`. Defaults to `CommandType.PARSE`.

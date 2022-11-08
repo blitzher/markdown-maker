@@ -20,14 +20,14 @@ describe("Command Line Arguments", () => {
     });
     it("--allow-undef should not throw when variable is not defined", () => {
         const output = new util.Parser("#mdvar<zum>", {
-            allow_undef: true,
+            allow_undefined: true,
         }).get();
 
         util.assert.strictEqual(output, "<zum>\n\n");
     });
     describe("Conditional imports", () => {
         it("should be able to conditionally import documents", () => {
-            util.put("hello\n#mdinclude<sample2.md,YES>", "sample1.md");
+            util.put("hello\n#mdinclude<sample2.md, YES>", "sample1.md");
             util.put("there", "sample2.md");
 
             const parser = new util.Parser("test/test-files/sample1.md");

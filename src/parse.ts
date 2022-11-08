@@ -37,7 +37,7 @@ class Parser {
         max_depth: number;
         use_underscore: boolean;
         toc_level: number;
-        allow_undef: boolean;
+        allow_undefined: boolean;
         html: boolean;
         watch: boolean;
         targetType: TargetType | undefined;
@@ -55,7 +55,7 @@ class Parser {
         opts?: {
             parent?: Parser;
             isFileCallback?: (s: string) => false | string;
-        }
+        },
     ) {
         /* this.working_directory */
         this.file = filename;
@@ -83,7 +83,7 @@ class Parser {
             max_depth: 5,
             use_underscore: false,
             toc_level: 3,
-            allow_undef: false,
+            allow_undefined: false,
             html: false,
             watch: false,
             targetType: undefined,
@@ -116,8 +116,8 @@ class Parser {
             console.log(
                 Colors.colors(
                     "magenta",
-                    "parsing " + this.file + ": depth=" + this.opts.depth
-                )
+                    "parsing " + this.file + ": depth=" + this.opts.depth,
+                ),
             );
         }
 
@@ -196,18 +196,19 @@ class Parser {
     }
 
     parse_commands(blob: string, commands: Command[]) {
-        commands.forEach(command => {
-
+        commands.forEach((command) => {
             /* Add global flag to RegExp */
-            const re = new RegExp(command.validator.source, (command.validator.flags || "") + "g");
-            blob = blob.replace(re, ((...args) => command.act(args, this) || ""));
-
+            const re = new RegExp(
+                command.validator.source,
+                (command.validator.flags || "") + "g",
+            );
+            blob = blob.replace(re, (...args) => command.act(args, this) || "");
         });
         return blob;
     }
 
     parse_all_commands(blob: string, commands: { [key: string]: Command[] }) {
-        Object.keys(commands).forEach(key => {
+        Object.keys(commands).forEach((key) => {
             blob = this.parse_commands(blob, commands[key]);
         });
         return blob;
@@ -230,9 +231,6 @@ class Parser {
         const hor = " ".repeat(tabSize);
 
         this.opts.secs.forEach((sec) => {
-
-
-
             if (sec.level > this.opts.toc_level) return;
             let title = sec.title.replace(/_/g, " ");
             title = this.parse_all_commands(title, commands);
@@ -260,25 +258,27 @@ class Parser {
     }
 
     /* output the parsed document to bundle */
-    to(bundleName: string, cb: (content: string) => void) {
+    to(bundleName: string, callback: (fileName: string) => void) {
         const dir = path.dirname(bundleName);
         var called = false;
-        if (!cb) cb = () => { };
+        if (callback === undefined) callback = () => {};
 
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir);
         }
         this.get(TargetType.MARKDOWN, (blob) => {
             fs.writeFile(bundleName, blob, () => {
-                if (!called) cb(bundleName);
-                called = true;
+                if (!this.opts.html) {
+                    callback(bundleName);
+                    called = true;
+                }
             });
         });
 
         if (this.opts.html) {
             const htmlFileName = bundleName.replace(".md", ".html");
             fs.writeFile(htmlFileName, this.html(), () => {
-                if (!called) cb(htmlFileName);
+                if (!called) callback(htmlFileName);
                 called = true;
             });
         }
@@ -297,7 +297,7 @@ class Parser {
 
     get(targetType?: TargetType, callback?) {
         /* If target type is undefined, markdown is the default */
-        if (targetType == undefined) targetType = TargetType.MARKDOWN;
+        if (targetType === undefined) targetType = TargetType.MARKDOWN;
         if (this.blobs[targetType]) {
             if (callback) {
                 callback(this.blobs[targetType]);
@@ -317,10 +317,12 @@ class Parser {
 
                 do {
                     if (error instanceof MDMError)
-                        traceback += `\n...on line ${p.line_num_from_index(error.match.index)} in ${p.file
-                            }`.grey(15);
+                        traceback += `\n...on line ${p.line_num_from_index(
+                            error.match.index,
+                        )} in ${p.file}`.grey(15);
                     else
-                        traceback += `\n...on line ${p.line_num} in ${p.file}`.grey(15);
+                        traceback +=
+                            `\n...on line ${p.line_num} in ${p.file}`.grey(15);
                     if (p.parent) p = p.parent;
                 } while (p.parent);
 
@@ -336,12 +338,15 @@ class Parser {
     }
 }
 
-export function splice(str: string, startIndex: number, width: number, newSubStr: string) {
+export function splice(
+    str: string,
+    startIndex: number,
+    width: number,
+    newSubStr: string,
+) {
     const start = str.slice(0, startIndex);
     const end = str.slice(startIndex + width);
     return start + newSubStr + end;
-
-
 }
 
 /* add extention to marked */
