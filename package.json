@@ -1,6 +1,6 @@
 {
     "name": "markdown-maker",
-    "version": "1.9.0",
+    "version": "1.9.1",
     "description": "",
     "main": "src/cltool.ts",
     "bin": {
@@ -26,7 +26,7 @@
         "test": "mocha",
         "test:yarn": "mocha",
         "bundle": "tsc --project tsconfig.json",
-        "main": "node build/cltool.js document/main.md -o dist/bundle.md",
+        "main": "node build/cltool.js document/main.md -o dist/bundle.md --debug",
         "debug": "node src/cltool.js -db document/main.md -o dist/bundle.md",
         "build": "npm run bundle && pkg --output bin/mdparse .",
         "build:yarn": "yarn bundle && pkg --output bin/mdparse .",

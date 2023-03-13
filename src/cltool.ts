@@ -67,14 +67,14 @@ argParser.add_argument("--allow-undefined", "-A", {
 //#endregion
 
 function main() {
-    let clargs;
+    let clargs, fileargs;
     let server: WebSocketServer | undefined;
 
     /* Read config file or parse args from cmd-line */
     if (fs.existsSync(configFileName)) {
-        let data = JSON.parse(fs.readFileSync(configFileName)).opts;
+        let data: { [key: string]: string | boolean | number } = JSON.parse(fs.readFileSync(configFileName)).opts;
 
-        let args = [];
+        let args: (string | number)[] = [];
         Object.entries(data).forEach(([key, value]) => {
             if (key != "src" && value !== false) {
                 args.push("--" + key);
@@ -84,8 +84,13 @@ function main() {
             }
         });
 
+        /* We skip [0] and [1], as  it is the binary and source file, even when compiled*/
+        for (let i = 2; i < process.argv.length; i++) args.push(process.argv[i]);
+
         clargs = argParser.parse_args(args);
-    } else clargs = argParser.parse_args();
+    } else {
+        clargs = argParser.parse_args();
+    }
 
     /* helper method for calling parser */
     const compile = (source, output, cb?) => {
