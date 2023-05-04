@@ -55,7 +55,7 @@ class Parser {
         opts?: {
             parent?: Parser;
             isFileCallback?: (s: string) => false | string;
-        },
+        }
     ) {
         /* this.working_directory */
         this.file = filename;
@@ -116,8 +116,8 @@ class Parser {
             console.log(
                 Colors.colors(
                     "magenta",
-                    "parsing " + this.file + ": depth=" + this.opts.depth,
-                ),
+                    "parsing " + this.file + ": depth=" + this.opts.depth
+                )
             );
         }
 
@@ -200,7 +200,7 @@ class Parser {
             /* Add global flag to RegExp */
             const re = new RegExp(
                 command.validator.source,
-                (command.validator.flags || "") + "g",
+                (command.validator.flags || "") + "g"
             );
             blob = blob.replace(re, (...args) => command.act(args, this) || "");
         });
@@ -237,9 +237,7 @@ class Parser {
             const link = this.titleId(title);
 
             let __line =
-                hor.repeat(Math.max(sec.level - 1, 0)) +
-                beg +
-                `[${title}](#${link})`;
+                hor.repeat(Math.max(sec.level - 1, 0)) + beg + `[${title}](#${link})`;
 
             __blob.push(__line);
         });
@@ -264,7 +262,7 @@ class Parser {
         if (callback === undefined) callback = () => {};
 
         if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir);
+            fs.mkdirSync(dir, { recursive: true });
         }
         this.get(TargetType.MARKDOWN, (blob) => {
             fs.writeFile(bundleName, blob, () => {
@@ -318,11 +316,9 @@ class Parser {
                 do {
                     if (error instanceof MDMError)
                         traceback += `\n...on line ${p.line_num_from_index(
-                            error.match.index,
+                            error.match.index
                         )} in ${p.file}`.grey(15);
-                    else
-                        traceback +=
-                            `\n...on line ${p.line_num} in ${p.file}`.grey(15);
+                    else traceback += `\n...on line ${p.line_num} in ${p.file}`.grey(15);
                     if (p.parent) p = p.parent;
                 } while (p.parent);
 
@@ -342,7 +338,7 @@ export function splice(
     str: string,
     startIndex: number,
     width: number,
-    newSubStr: string,
+    newSubStr: string
 ) {
     const start = str.slice(0, startIndex);
     const end = str.slice(startIndex + width);
@@ -363,8 +359,7 @@ marked.use({
             const id = args.filter((arg) => arg.startsWith("#"));
 
             const classNames = classes.map((c) => c.slice(1));
-            const classText =
-                classes.length > 0 ? `class="${classNames.join(" ")}"` : "";
+            const classText = classes.length > 0 ? `class="${classNames.join(" ")}"` : "";
             const idText = id.length > 0 ? `id="${id[0].slice(1)}"` : "";
 
             /* remove the ending from the quote */
