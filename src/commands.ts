@@ -179,7 +179,7 @@ new Command(
 
 /* mdtemplate */
 new Command(
-    /#mdtemplate<([\w\W]+)>/,
+    /#mdtemplate<(\w+?)>/,
     (match, parser) => {
         const template = match[1];
         const replacement = templates[template];
@@ -199,40 +199,35 @@ new Command(
     CommandType.POSTPARSE,
 );
 
-export function load_extensions(parser: Parser) {
-    /* global extention */
-    const global_extensions_path = path.join(process.cwd(), "extensions.js");
-    if (fs.existsSync(global_extensions_path)) {
-        const extensions = requireRuntime(global_extensions_path);
+const loaded_extentions: fs.PathLike[] = []
+
+function load_extension(parser: Parser, file: fs.PathLike) {
+    if (loaded_extentions.includes(file)) return;
+    if (fs.existsSync(file)) {
+        const extensions = requireRuntime(file);
+        loaded_extentions.push(file);
         extensions.main(new_template, new_command);
 
         if (parser.opts.verbose)
             console.log(
-                `Loaded global extensions from ${global_extensions_path}`
+                `Loaded extensions from ${file}`
                     .yellow,
             );
     } else if (parser.opts.debug) {
         console.log(
-            `No global extensions found at ${global_extensions_path}`.red,
+            `No extensions found at ${file}`.red,
         );
     }
+}
+
+export function load_extensions(parser: Parser) {
+    /* global extention */
+    const global_extensions_path = path.join(__dirname, "extensions.js");
+    load_extension(parser, global_extensions_path);
 
     /* project extention */
     const project_extensions_path = path.join(parser.wd_full, "extensions.js");
-    if (fs.existsSync(project_extensions_path)) {
-        const extensions = requireRuntime(project_extensions_path);
-        extensions.main(new_template, new_command);
-
-        if (parser.opts.verbose)
-            console.log(
-                `Loaded project extensions from ${project_extensions_path}`
-                    .yellow,
-            );
-    } else if (parser.opts.debug) {
-        console.log(
-            `No project extensions found at ${project_extensions_path}!`.red,
-        );
-    }
+    load_extension(parser, project_extensions_path);
 }
 
 /**

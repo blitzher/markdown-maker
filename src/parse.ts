@@ -258,27 +258,21 @@ class Parser {
     /* output the parsed document to bundle */
     to(bundleName: string, callback: (fileName: string) => void) {
         const dir = path.dirname(bundleName);
-        var called = false;
-        if (callback === undefined) callback = () => {};
+        if (callback === undefined) callback = () => { };
 
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
         }
-        this.get(TargetType.MARKDOWN, (blob) => {
-            fs.writeFile(bundleName, blob, () => {
-                if (!this.opts.html) {
-                    callback(bundleName);
-                    called = true;
-                }
-            });
-        });
 
-        if (this.opts.html) {
-            const htmlFileName = bundleName.replace(".md", ".html");
-            fs.writeFile(htmlFileName, this.html(), () => {
-                if (!called) callback(htmlFileName);
-                called = true;
+        if (!this.opts.html) {
+            this.get(TargetType.MARKDOWN, (blob) => {
+                fs.writeFile(bundleName, blob, () => callback(bundleName));
             });
+        }
+
+        else {
+            const htmlFileName = bundleName.replace(".md", ".html");
+            fs.writeFile(htmlFileName, this.html(), () => callback(htmlFileName));
         }
     }
 
@@ -293,7 +287,7 @@ class Parser {
         return htmlFormatted;
     }
 
-    get(targetType?: TargetType, callback?) {
+    get(targetType?: TargetType, callback?: (blob: string) => void): string {
         /* If target type is undefined, markdown is the default */
         if (targetType === undefined) targetType = TargetType.MARKDOWN;
         if (this.blobs[targetType]) {
@@ -307,10 +301,10 @@ class Parser {
                 let blob = this.parse();
                 this.opts.targetType = undefined;
                 if (callback) callback(blob);
-                return blob;
+                return blob
             } catch (error) {
+                /* Compile a traceback of error */
                 let traceback = "";
-
                 let p: Parser = this;
 
                 do {
@@ -324,7 +318,7 @@ class Parser {
 
                 error.message += traceback;
 
-                /* only interested in stacktrace, when debugging */
+                /* only interested in node stacktrace when debugging */
                 if (!this.opts.debug) error.stack = "";
 
                 if (this.opts.only_warn) console.error(error);
@@ -345,7 +339,7 @@ export function splice(
     return start + newSubStr + end;
 }
 
-/* add extention to marked */
+/* add extention to marked for classed blockquotes*/
 marked.use({
     renderer: {
         blockquote(quote) {

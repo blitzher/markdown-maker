@@ -140,9 +140,8 @@ function main() {
 
     /* compile once */
     if (!clargs.watch) compile(clargs.src, clargs.output);
-
     /* watch the folder and recompile on change */
-    if (clargs.watch) {
+    else {
         const srcDirName = path.dirname(clargs.src);
         console.log(`Watching ${srcDirName} for changes...`.yellow);
         server = new WebSocketServer({ port: 7788 });
@@ -154,6 +153,7 @@ function main() {
             console.log(e.message);
         }
     }
+
 }
 
 /* main entrypoint */
