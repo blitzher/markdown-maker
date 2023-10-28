@@ -11,7 +11,7 @@ const { version } = require("../package.json"); /* package version number */
 const choki = require("chokidar");
 
 export const argParser = new ArgumentParser({
-    description: "Markdown bundler, with extra options",
+    description: "Markdown bundler, with extra options. Extension file is loaded from ./extensions.js, if it exists",
     prog: "mdparse",
 });
 
@@ -90,6 +90,13 @@ function main() {
         clargs = argParser.parse_args(args);
     } else {
         clargs = argParser.parse_args();
+    }
+
+    /* if src is init, create config file and exit */
+    if (clargs.src == "init") {
+        const template = fs.readFileSync(path.join(__dirname, "..", "src", "templates", "configTemplate.json"));
+        fs.writeFileSync(configFileName, template);
+        return;
     }
 
     /* helper method for calling parser */
