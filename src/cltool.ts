@@ -96,6 +96,7 @@ function main() {
     if (clargs.src == "init") {
         const template = fs.readFileSync(path.join(__dirname, "..", "src", "templates", "configTemplate.json"));
         fs.writeFileSync(configFileName, template);
+        fs.writeFileSync("main.md", "# Main\n");
         return;
     }
 
