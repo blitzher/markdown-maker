@@ -42,7 +42,7 @@ export class Command {
     constructor(
         validator: RegExp,
         acter: (match: RegExpMatchArray, parser: Parser) => string | void,
-        type: CommandType,
+        type: CommandType
     ) {
         this.type = type;
         this.validator = validator;
@@ -71,7 +71,7 @@ export class Command {
 new Command(
     /(\s|^)<(.+)>/,
     (match, parser) => `${match[1]}#mdvar<${match[2]}>`,
-    CommandType.PREPARSE,
+    CommandType.PREPARSE
 );
 
 /* mddef */
@@ -80,7 +80,7 @@ new Command(
     (match, parser) => {
         parser.opts.defs[match[1]] = match[2].replace("_", " ");
     },
-    CommandType.PARSE,
+    CommandType.PARSE
 );
 
 /* mdvar */
@@ -92,7 +92,7 @@ new Command(
             throw new Error(`Undefined variable: ${match[1]}`);
         return (value = value || `<${match[1]}>`);
     },
-    CommandType.PARSE,
+    CommandType.PARSE
 );
 
 /** mdinclude */
@@ -107,17 +107,31 @@ new Command(
         }
 
         /* get the matching group */
-        const [_, name, condition] = match;
+        let [_, name, condition] = match;
 
         /* implement conditional imports */
         if (condition && !parser.opts.args.includes(condition)) return;
+
+        const fsstat = fs.lstatSync(path.join(parser.wd, name));
+        if (fsstat.isDirectory()) {
+            /* check if a file with the same name of the
+             * exists in the folder */
+
+            if (fs.existsSync(path.join(parser.wd, name, `${name}.md`))) {
+                name = path.join(name, `${name}.md`);
+            } else {
+                throw new Error(
+                    `No entry file found in folder "${name}". Looking for "${name}.md"`
+                );
+            }
+        }
 
         const recursiveParser = new Parser(
             path.join(parser.wd, name),
             parser.opts,
             {
                 parent: parser,
-            },
+            }
         );
 
         /* keep the options the same */
@@ -134,7 +148,7 @@ new Command(
         parser.opts.depth--;
         return blob;
     },
-    CommandType.PARSE,
+    CommandType.PARSE
 );
 
 /* mdlabel */
@@ -149,7 +163,7 @@ new Command(
         parser.opts.secs.push({ level, title });
         return `<span id="${link}"></span>`;
     },
-    CommandType.PREPARSE,
+    CommandType.PREPARSE
 );
 
 /* mdref */
@@ -163,7 +177,7 @@ new Command(
 
             if (i === parser.opts.secs.length - 1)
                 throw new Error(
-                    `Reference to [${match[1]}] could not be resolved!`,
+                    `Reference to [${match[1]}] could not be resolved!`
                 );
         }
 
@@ -174,7 +188,7 @@ new Command(
         else if (parser.opts.targetType === TargetType.MARKDOWN)
             return `[${match[1]}](#${link})`;
     },
-    CommandType.PARSE,
+    CommandType.PARSE
 );
 
 /* mdtemplate */
@@ -190,16 +204,16 @@ new Command(
             throw new MDMError(`Template \"${template}\" not found!`, match);
         }
     },
-    CommandType.PARSE,
+    CommandType.PARSE
 );
 
 new Command(
     /#mdmaketoc(?:<>)?/,
     (match, parser) => parser.gen_toc(),
-    CommandType.POSTPARSE,
+    CommandType.POSTPARSE
 );
 
-const loaded_extentions: fs.PathLike[] = []
+const loaded_extentions: fs.PathLike[] = [];
 
 function load_extension(parser: Parser, file: fs.PathLike) {
     if (loaded_extentions.includes(file)) return;
@@ -209,14 +223,9 @@ function load_extension(parser: Parser, file: fs.PathLike) {
         extensions.main(new_template, new_command);
 
         if (parser.opts.verbose)
-            console.log(
-                `Loaded extensions from ${file}`
-                    .yellow,
-            );
+            console.log(`Loaded extensions from ${file}`.yellow);
     } else if (parser.opts.debug) {
-        console.log(
-            `No extensions found at ${file}`.red,
-        );
+        console.log(`No extensions found at ${file}`.red);
     }
 }
 
@@ -239,7 +248,7 @@ export function load_extensions(parser: Parser) {
 export function new_command(
     regex: RegExp,
     acter: (match: RegExpMatchArray, parser: Parser) => string,
-    type?: CommandType,
+    type?: CommandType
 ) {
     new Command(regex, acter, type || CommandType.PARSE);
 }

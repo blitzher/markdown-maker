@@ -1,8 +1,7 @@
 const fs = require("fs");
 const assert = require("assert");
 const Parser = require("../build/parse");
-
-
+const path = require("path");
 
 /* make folder for temporary files, if it doesn't exist */
 if (
@@ -12,8 +11,16 @@ if (
     fs.mkdirSync("test/test-files");
 }
 
+/**
+ * Create a new file under `test/test-files` with the given content.
+ * @param {string} text
+ * @param {string} file
+ */
 function put(text, file) {
-    fs.writeFileSync("test/test-files/" + file, text);
+    fs.writeFileSync(path.join("test", "test-files", file), text);
+}
+function putDir(name) {
+    fs.mkdirSync(path.join("test", "test-files", name));
 }
 
 const TargetType = {
@@ -24,7 +31,9 @@ const TargetType = {
 module.exports = {
     fs,
     assert,
+    path,
     Parser,
     put,
+    putDir,
     TargetType,
 };

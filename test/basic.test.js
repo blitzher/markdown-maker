@@ -1,3 +1,4 @@
+const path = require("path");
 const util = require("./tester.test.js");
 
 describe("Basic features", () => {
@@ -53,5 +54,15 @@ describe("Basic features", () => {
         const parser = new util.Parser(`### Title\n#mdref<Title>`);
 
         util.assert.strictEqual(parser.get(), "### Title\n[Title](#title)\n\n");
+    });
+    it("should include file with same name as folder when including a folder", () => {
+        util.put("#mdinclude<sample_fld>", "sample1.md");
+        util.putDir("sample_fld");
+        util.put("hello", util.path.join("sample_fld", "sample_fld.md"));
+
+        const parser = new util.Parser("test/test-files/sample1.md");
+        const output = parser.get();
+
+        util.assert.strictEqual(output, "hello\n\n");
     });
 });
