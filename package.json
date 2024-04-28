@@ -52,6 +52,7 @@
         "colors": "^1.4.0",
         "colors.ts": "^1.0.20",
         "marked": "^2.0.1",
+        "node-html-parser": "^6.1.13",
         "require-runtime": "^2.0.0",
         "ws": "^8.8.1"
     },

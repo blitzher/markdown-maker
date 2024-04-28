@@ -1,4 +1,3 @@
-const path = require("path");
 const util = require("./tester.test.js");
 
 describe("Basic features", () => {

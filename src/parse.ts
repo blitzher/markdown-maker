@@ -1,9 +1,10 @@
-const fs = require("fs"); /* for handling reading of files */
-const path = require("path"); /* for handling file paths */
+import fs from "fs"; /* for handling reading of files */
+import path from "path"; /* for handling file paths */
 
 import Colors = require("colors.ts"); /* for adding colours to strings */
 Colors.enable();
-const marked = require("marked");
+import marked from "marked";
+
 import { Command, commands, load_extensions, MDMError } from "./commands";
 
 enum TargetType {
@@ -43,6 +44,13 @@ class Parser {
         targetType: TargetType | undefined;
         only_warn: boolean;
         parent?: Parser;
+        hooks: { [key: string]: () => string };
+        adv_hooks: {
+            [key: string]: (
+                tree: HTMLElement,
+                map: { [tag: string]: HTMLElement }
+            ) => HTMLElement;
+        };
         isFileCallback: (s: string) => false | string;
     };
     raw: string;
@@ -89,6 +97,8 @@ class Parser {
             targetType: undefined,
             only_warn: false,
             parent: undefined,
+            hooks: {},
+            adv_hooks: {},
             isFileCallback: (f) => {
                 if (!fs.existsSync(f)) return false;
                 return fs.readFileSync(f, "utf-8") + "\n";
@@ -237,11 +247,25 @@ class Parser {
             const link = this.titleId(title);
 
             let __line =
-                hor.repeat(Math.max(sec.level - 1, 0)) + beg + `[${title}](#${link})`;
+                hor.repeat(Math.max(sec.level - 1, 0)) +
+                beg +
+                `[${title}](#${link})`;
 
             __blob.push(__line);
         });
         return __blob.join("\n");
+    }
+
+    add_hook(name: string, hook: () => string) {
+        if (this.opts.hooks[name] != undefined)
+            throw new Error(`Hook ${name} already exists!`);
+        this.opts.hooks[name] = hook;
+    }
+
+    add_adv_hook(name: string, hook: (tree: HTMLElement) => HTMLElement) {
+        if (this.opts.hooks[name] != undefined)
+            throw new Error(`Hook ${name} already exists!`);
+        this.opts.adv_hooks[name] = hook;
     }
 
     line_num_from_index(index: number) {
@@ -258,7 +282,7 @@ class Parser {
     /* output the parsed document to bundle */
     to(bundleName: string, callback: (fileName: string) => void) {
         const dir = path.dirname(bundleName);
-        if (callback === undefined) callback = () => { };
+        if (callback === undefined) callback = () => {};
 
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
@@ -268,11 +292,11 @@ class Parser {
             this.get(TargetType.MARKDOWN, (blob) => {
                 fs.writeFile(bundleName, blob, () => callback(bundleName));
             });
-        }
-
-        else {
+        } else {
             const htmlFileName = bundleName.replace(".md", ".html");
-            fs.writeFile(htmlFileName, this.html(), () => callback(htmlFileName));
+            fs.writeFile(htmlFileName, this.html(), () =>
+                callback(htmlFileName)
+            );
         }
     }
 
@@ -301,7 +325,7 @@ class Parser {
                 let blob = this.parse();
                 this.opts.targetType = undefined;
                 if (callback) callback(blob);
-                return blob
+                return blob;
             } catch (error) {
                 /* Compile a traceback of error */
                 let traceback = "";
@@ -312,7 +336,9 @@ class Parser {
                         traceback += `\n...on line ${p.line_num_from_index(
                             error.match.index
                         )} in ${p.file}`.grey(15);
-                    else traceback += `\n...on line ${p.line_num} in ${p.file}`.grey(15);
+                    else
+                        traceback +=
+                            `\n...on line ${p.line_num} in ${p.file}`.grey(15);
                     if (p.parent) p = p.parent;
                 } while (p.parent);
 
@@ -353,7 +379,8 @@ marked.use({
             const id = args.filter((arg) => arg.startsWith("#"));
 
             const classNames = classes.map((c) => c.slice(1));
-            const classText = classes.length > 0 ? `class="${classNames.join(" ")}"` : "";
+            const classText =
+                classes.length > 0 ? `class="${classNames.join(" ")}"` : "";
             const idText = id.length > 0 ? `id="${id[0].slice(1)}"` : "";
 
             /* remove the ending from the quote */

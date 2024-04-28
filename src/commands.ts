@@ -3,6 +3,7 @@ import Parser from "./parse";
 import * as fs from "fs";
 import templates, { new_template } from "./templates";
 import requireRuntime from "require-runtime";
+import * as nodeHtmlParser from "node-html-parser";
 
 export class MDMError extends Error {
     match: RegExpMatchArray;
@@ -207,9 +208,62 @@ new Command(
     CommandType.PARSE
 );
 
+/* mdmaketoc */
 new Command(
     /#mdmaketoc(?:<>)?/,
     (match, parser) => parser.gen_toc(),
+    CommandType.POSTPARSE
+);
+
+/* basic mdhook */
+new Command(
+    /#mdhook<(\w+)>/,
+    (match, parser) => {
+        if (parser.opts.hooks[match[1]]) {
+            return parser.opts.hooks[match[1]]();
+        }
+    },
+    CommandType.POSTPARSE
+);
+
+/* mdadvhook */
+new Command(
+    /\#mdadvhook<(\w+)>([\w\W]+?)\#mdendhook/,
+    (match, parser) => {
+        if (parser.opts.adv_hooks[match[1]]) {
+            const innerElements = match[2].trim();
+            /* Find tagNames in innerElements */
+            const re = /<(\w+)[\s=\w\"\'-]*>/g;
+            const tags = [];
+            innerElements.match(re)?.forEach((tag) => {
+                tags.push(tag.slice(1, -1).split(" ")[0]);
+            });
+            /* Evil type hack */
+            const root = nodeHtmlParser.parse(innerElements, {
+                voidTag: {
+                    tags,
+                    closingSlash: true,
+                },
+            }) as any as HTMLElement;
+
+            const helper = (node: HTMLElement) => {
+                /*  */
+                const map: { [tag: string]: HTMLElement } = {};
+                for (let tag of tags) {
+                    const el = node.getElementsByTagName(tag)[0];
+                    const dataTag = el.toString().match(/data-tag="([\w-]+)"/);
+                    if (!dataTag || dataTag[1] == undefined) continue;
+                    el.tagName = dataTag[1];
+                    el.removeAttribute("data-tag");
+                    map[tag] = el;
+                }
+                return map;
+            };
+
+            const hooked = parser.opts.adv_hooks[match[1]](root, helper(root));
+            return hooked.toString();
+        }
+    },
     CommandType.POSTPARSE
 );
 

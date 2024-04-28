@@ -1,5 +1,4 @@
 const util = require("./tester.test.js");
-const fs = require("fs");
 
 describe("Error handling", () => {
     it("should dissallow undefined templates", () => {

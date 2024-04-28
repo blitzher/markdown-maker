@@ -2,6 +2,7 @@ const fs = require("fs");
 const assert = require("assert");
 const Parser = require("../build/parse");
 const path = require("path");
+const html = require("node-html-parser");
 
 /* make folder for temporary files, if it doesn't exist */
 if (
@@ -29,8 +30,9 @@ const TargetType = {
 };
 
 module.exports = {
-    fs,
     assert,
+    fs,
+    html,
     path,
     Parser,
     put,
