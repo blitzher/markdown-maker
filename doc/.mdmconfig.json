@@ -1,7 +1,0 @@
-{
-    "opts": {
-        "src": "main.md",
-        "use-underscore": true,
-        "html": true
-    }
-}
