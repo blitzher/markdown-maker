@@ -14,4 +14,4 @@ dist/
 bin/
 tmp/
 test/test-files
-build/
+bundle/

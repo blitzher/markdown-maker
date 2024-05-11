@@ -1,42 +1,20 @@
 {
     "name": "markdown-maker",
     "version": "1.10.1",
-    "description": "",
+    "description": "A superset-compiler for markdown using marked",
     "main": "src/main.ts",
     "bin": {
-        "mdparse": "build/main.js"
-    },
-    "pkg": {
-        "assets": [
-            "node_modules/argparse/*",
-            "node_modules/chokidar/*",
-            "node_modules/colors/*",
-            "node_modules/colors./*",
-            "node_modules/marked/*",
-            "src/templates/*"
-        ],
-        "targets": [
-            "node20-macos-x64",
-            "node20-win-x64",
-            "node20-linux-x64"
-        ]
+        "mdparse": "bundle/main.js"
     },
     "scripts": {
         "test": "mocha --require test/hooks.js",
         "test:yarn": "mocha",
         "bundle": "tsc --project tsconfig.json",
-        "main": "node build/main.js document/main.md -o dist/bundle.md --debug",
+        "main": "node bundle/main.js document/main.md -o dist/bundle.md --debug",
         "debug": "node src/main.js -db document/main.md -o dist/bundle.md",
-        "build": "npm run bundle && pkg --output bin/mdparse .",
-        "build:yarn": "yarn bundle && pkg --output bin/mdparse .",
-        "clear": "rm -rf dist",
-        "premac-deploy": "npm run build",
-        "mac-deploy": "mv bin/mdparse-macos ~/Documents/commands/mdparse",
-        "prewin-deploy": "npm run build",
-        "win-deploy": "mv bin/mdparse-win.exe ../../commands/mdparse.exe",
+        "clear": "rm -rf bundle bin",
         "pretest": "npm run bundle",
-        "pretest:yarn": "yarn bundle",
-        "prepare": "npm run build"
+        "pretest:yarn": "yarn bundle"
     },
     "keywords": [],
     "author": "blitzher",
