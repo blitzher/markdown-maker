@@ -10,8 +10,9 @@ const { ArgumentParser } = require("argparse"); /* for parsing clargs */
 const { version } = require("../package.json"); /* package version number */
 const choki = require("chokidar");
 
-export const argParser = new ArgumentParser({
-    description: "Markdown bundler, with extra options. Extension file is loaded from ./extensions.js, if it exists",
+const argParser = new ArgumentParser({
+    description:
+        "Markdown bundler, with extra options. Extension file is loaded from ./extensions.js, if it exists",
     prog: "mdparse",
 });
 
@@ -67,12 +68,14 @@ argParser.add_argument("--allow-undefined", "-A", {
 //#endregion
 
 function main() {
-    let clargs, fileargs;
+    let clargs: { [key: string]: string | boolean | number };
     let server: WebSocketServer | undefined;
 
     /* Read config file or parse args from cmd-line */
     if (fs.existsSync(configFileName)) {
-        let data: { [key: string]: string | boolean | number } = JSON.parse(fs.readFileSync(configFileName)).opts;
+        let data: { [key: string]: string | boolean | number } = JSON.parse(
+            fs.readFileSync(configFileName)
+        ).opts;
 
         let args: (string | number)[] = [];
         Object.entries(data).forEach(([key, value]) => {
@@ -85,7 +88,8 @@ function main() {
         });
 
         /* We skip [0] and [1], as  it is the binary and source file, even when compiled*/
-        for (let i = 2; i < process.argv.length; i++) args.push(process.argv[i]);
+        for (let i = 2; i < process.argv.length; i++)
+            args.push(process.argv[i]);
 
         clargs = argParser.parse_args(args);
     } else {
@@ -94,7 +98,15 @@ function main() {
 
     /* if src is init, create config file and exit */
     if (clargs.src == "init") {
-        const template = fs.readFileSync(path.join(__dirname, "..", "src", "templates", "configTemplate.json"));
+        const template = fs.readFileSync(
+            path.join(
+                __dirname,
+                "..",
+                "src",
+                "templates",
+                "configTemplate.json"
+            )
+        );
         fs.writeFileSync(configFileName, template);
         fs.writeFileSync("main.md", "# Main\n");
         return;
@@ -148,8 +160,7 @@ function main() {
 
     /* compile once */
     if (!clargs.watch) compile(clargs.src, clargs.output);
-    /* watch the folder and recompile on change */
-    else {
+    /* watch the folder and recompile on change */ else {
         const srcDirName = path.dirname(clargs.src);
         console.log(`Watching ${srcDirName} for changes...`.yellow);
         server = new WebSocketServer({ port: 7788 });
@@ -161,8 +172,9 @@ function main() {
             console.log(e.message);
         }
     }
-
 }
-
+export default {
+    Parser,
+};
 /* main entrypoint */
 if (require.main === module) main();
