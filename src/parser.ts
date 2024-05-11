@@ -6,6 +6,7 @@ Colors.enable();
 import marked from "marked";
 
 import { Command, commands, load_extensions, MDMError } from "./commands";
+import { argParser, CLArgs as CommandLineArgs, ParserOptions } from "./cltool";
 
 enum TargetType {
     HTML,
@@ -23,43 +24,15 @@ class Parser {
     blobs: {
         [key: number]: string | undefined;
     };
-    opts: {
-        defs: {
-            [key: string]: string;
-        };
-        secs: {
-            level: number;
-            title: string;
-        }[];
-        args: string[];
-        depth: number;
-        verbose: boolean;
-        debug: boolean;
-        max_depth: number;
-        use_underscore: boolean;
-        toc_level: number;
-        allow_undefined: boolean;
-        html: boolean;
-        watch: boolean;
-        targetType: TargetType | undefined;
-        only_warn: boolean;
-        parent?: Parser;
-        hooks: { [key: string]: () => string };
-        adv_hooks: {
-            [key: string]: (
-                tree: HTMLElement,
-                map: { [tag: string]: HTMLElement }
-            ) => HTMLElement;
-        };
-        isFileCallback: (s: string) => false | string;
-    };
+    opts: ParserOptions;
+    clargs: CommandLineArgs;
     raw: string;
 
     static TOKEN = "#md";
 
     constructor(
-        filename,
-        clargs,
+        filename: string,
+        clargs?: CommandLineArgs,
         opts?: {
             parent?: Parser;
             isFileCallback?: (s: string) => false | string;
@@ -81,6 +54,7 @@ class Parser {
         this.blobs = {};
 
         /* all options */
+        this.clargs = clargs;
         this.opts = {
             defs: {},
             secs: [],
@@ -106,7 +80,7 @@ class Parser {
         };
 
         if (!clargs) {
-            clargs = {};
+            clargs = argParser.parse_args([filename]);
         }
 
         /* append all commandline arguments to this */

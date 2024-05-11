@@ -1,6 +1,6 @@
 const fs = require("fs");
 const assert = require("assert");
-const Parser = require("../build/parse");
+const Parser = require("../build/parser");
 const path = require("path");
 const html = require("node-html-parser");
 

@@ -2,9 +2,9 @@
     "name": "markdown-maker",
     "version": "1.10.1",
     "description": "",
-    "main": "src/cltool.ts",
+    "main": "src/main.ts",
     "bin": {
-        "mdparse": "build/cltool.js"
+        "mdparse": "build/main.js"
     },
     "pkg": {
         "assets": [
@@ -13,21 +13,20 @@
             "node_modules/colors/*",
             "node_modules/colors./*",
             "node_modules/marked/*",
-            "build/cltool.js",
             "src/templates/*"
         ],
         "targets": [
-            "node12-macos-x64",
-            "node12-win-x64",
-            "node12-linux-x64"
+            "node20-macos-x64",
+            "node20-win-x64",
+            "node20-linux-x64"
         ]
     },
     "scripts": {
         "test": "mocha --require test/hooks.js",
         "test:yarn": "mocha",
         "bundle": "tsc --project tsconfig.json",
-        "main": "node build/cltool.js document/main.md -o dist/bundle.md --debug",
-        "debug": "node src/cltool.js -db document/main.md -o dist/bundle.md",
+        "main": "node build/main.js document/main.md -o dist/bundle.md --debug",
+        "debug": "node src/main.js -db document/main.md -o dist/bundle.md",
         "build": "npm run bundle && pkg --output bin/mdparse .",
         "build:yarn": "yarn bundle && pkg --output bin/mdparse .",
         "clear": "rm -rf dist",
@@ -43,13 +42,8 @@
     "author": "blitzher",
     "license": "MIT",
     "dependencies": {
-        "@types/chokidar": "^2.1.3",
-        "@types/colors": "^1.2.1",
-        "@types/node": "^15.6.1",
-        "@types/ws": "^8.5.3",
         "argparse": "^2.0.1",
         "chokidar": "^3.5.1",
-        "colors": "^1.4.0",
         "colors.ts": "^1.0.20",
         "marked": "^2.0.1",
         "node-html-parser": "^6.1.13",
@@ -57,9 +51,13 @@
         "ws": "^8.8.1"
     },
     "devDependencies": {
+        "@types/argparse": "^2.0.16",
+        "@types/chokidar": "^2.1.3",
+        "@types/colors": "^1.2.1",
+        "@types/node": "^15.6.1",
+        "@types/ws": "^8.5.3",
         "cloc": "^2.7.0",
         "mocha": "^8.3.1",
-        "pkg": "^4.4.9",
         "prettier": "^2.3.0",
         "typescript": "^4.3.2"
     }

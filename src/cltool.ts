@@ -2,21 +2,18 @@ const fs = require("fs"); /* for handling reading of files */
 const path = require("path"); /* for handling file paths */
 
 import Colors = require("colors.ts"); /* for adding colours to strings */
-import Parser from "./parse";
-import { WebSocketServer } from "ws";
+import { TargetType } from "./commands";
+import Parser from "./parser";
 
 Colors.enable();
-const { ArgumentParser } = require("argparse"); /* for parsing clargs */
+import { ArgumentParser } from "argparse"; /* for parsing clargs */
 const { version } = require("../package.json"); /* package version number */
-const choki = require("chokidar");
 
-const argParser = new ArgumentParser({
+export const argParser = new ArgumentParser({
     description:
         "Markdown bundler, with extra options. Extension file is loaded from ./extensions.js, if it exists",
     prog: "mdparse",
 });
-
-const configFileName = ".mdmconfig.json";
 
 //#region command line args
 argParser.add_argument("src", {
@@ -67,114 +64,47 @@ argParser.add_argument("--allow-undefined", "-A", {
 });
 //#endregion
 
-function main() {
-    let clargs: { [key: string]: string | boolean | number };
-    let server: WebSocketServer | undefined;
-
-    /* Read config file or parse args from cmd-line */
-    if (fs.existsSync(configFileName)) {
-        let data: { [key: string]: string | boolean | number } = JSON.parse(
-            fs.readFileSync(configFileName)
-        ).opts;
-
-        let args: (string | number)[] = [];
-        Object.entries(data).forEach(([key, value]) => {
-            if (key != "src" && value !== false) {
-                args.push("--" + key);
-            }
-            if (typeof value != "boolean") {
-                args.push(value);
-            }
-        });
-
-        /* We skip [0] and [1], as  it is the binary and source file, even when compiled*/
-        for (let i = 2; i < process.argv.length; i++)
-            args.push(process.argv[i]);
-
-        clargs = argParser.parse_args(args);
-    } else {
-        clargs = argParser.parse_args();
-    }
-
-    /* if src is init, create config file and exit */
-    if (clargs.src == "init") {
-        const template = fs.readFileSync(
-            path.join(
-                __dirname,
-                "..",
-                "src",
-                "templates",
-                "configTemplate.json"
-            )
-        );
-        fs.writeFileSync(configFileName, template);
-        fs.writeFileSync("main.md", "# Main\n");
-        return;
-    }
-
-    /* helper method for calling parser */
-    const compile = (source, output, cb?) => {
-        /* load data from file, if it exists,
-         * otherwise, interpret as string */
-
-        const parser = new Parser(source, clargs);
-        parser.to(output, (file) => {
-            console.log(`Compiled ${file}`.green);
-            if (cb) cb();
-        });
-        return parser;
-    };
-
-    const internalCooldown = 1000;
-    function watcher(event, path) {
-        const now = Date.now();
-
-        if (!this.time) this.time = now;
-
-        if (now - this.time < internalCooldown) return;
-
-        console.log(path);
-
-        console.log(`Detected change in ${path}...`);
-
-        try {
-            compile(clargs.src, clargs.output, () => {
-                /* after compile, send refresh command to clients */
-                server.clients.forEach((client) => {
-                    if (client.OPEN) client.send("refresh");
-                });
-            });
-        } catch (e) {
-            console.log(e.message);
-        }
-
-        this.time = now;
-    }
-
-    /* in case source is a directory, look for entry in directory */
-    if (fs.existsSync(clargs.src) && fs.lstatSync(clargs.src).isDirectory()) {
-        clargs.src = path.join(clargs.src, clargs.entry);
-    }
-
-    if (clargs.debug) console.dir(clargs);
-
-    /* compile once */
-    if (!clargs.watch) compile(clargs.src, clargs.output);
-    /* watch the folder and recompile on change */ else {
-        const srcDirName = path.dirname(clargs.src);
-        console.log(`Watching ${srcDirName} for changes...`.yellow);
-        server = new WebSocketServer({ port: 7788 });
-
-        const _watcher = choki.watch(srcDirName).on("all", watcher);
-        try {
-            compile(clargs.src, clargs.output);
-        } catch (e) {
-            console.log(e.message);
-        }
-    }
-}
-export default {
-    Parser,
+export type CLArgs = {
+    src: string;
+    output: string;
+    verbose: boolean;
+    debug: boolean;
+    max_depth: number;
+    entry: string;
+    watch: boolean;
+    use_underscore: boolean;
+    toc_level: number;
+    html: boolean;
+    allow_undefined: boolean;
 };
-/* main entrypoint */
-if (require.main === module) main();
+
+export type ParserOptions = {
+    defs: {
+        [key: string]: string;
+    };
+    secs: {
+        level: number;
+        title: string;
+    }[];
+    args: string[];
+    depth: number;
+    verbose: boolean;
+    debug: boolean;
+    max_depth: number;
+    use_underscore: boolean;
+    toc_level: number;
+    allow_undefined: boolean;
+    html: boolean;
+    watch: boolean;
+    targetType: TargetType | undefined;
+    only_warn: boolean;
+    parent?: Parser;
+    hooks: { [key: string]: () => string };
+    adv_hooks: {
+        [key: string]: (
+            tree: HTMLElement,
+            map: { [tag: string]: HTMLElement }
+        ) => HTMLElement;
+    };
+    isFileCallback: (s: string) => false | string;
+};

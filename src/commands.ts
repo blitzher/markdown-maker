@@ -1,5 +1,5 @@
 import * as path from "path";
-import Parser from "./parse";
+import Parser from "./parser";
 import * as fs from "fs";
 import templates, { new_template } from "./templates";
 import requireRuntime from "require-runtime";
@@ -129,7 +129,7 @@ new Command(
 
         const recursiveParser = new Parser(
             path.join(parser.wd, name),
-            parser.opts,
+            parser.clargs,
             {
                 parent: parser,
             }

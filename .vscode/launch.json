@@ -5,30 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Compile main",
-            "request": "launch",
-            "runtimeArgs": [
-                "run-script",
-                "main"
-            ],
-            "runtimeExecutable": "npm",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "type": "pwa-node"
-        },
-        {
             "name": "Run test",
             "request": "launch",
-            "runtimeArgs": [
-                "run-script",
-                "test"
-            ],
+            "runtimeArgs": ["run-script", "test"],
             "runtimeExecutable": "npm",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "type": "pwa-node"
+            "skipFiles": ["<node_internals>/**"],
+            "type": "node"
         }
     ]
 }
