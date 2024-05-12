@@ -4,6 +4,7 @@ import * as fs from "fs";
 import templates, { new_template } from "./templates";
 import requireRuntime from "require-runtime";
 import * as nodeHtmlParser from "node-html-parser";
+import XRegExp from "xregexp";
 
 export class MDMError extends Error {
     match: RegExpMatchArray;
@@ -45,9 +46,10 @@ export class Command {
         acter: (match: RegExpMatchArray, parser: Parser) => string | void,
         type: CommandType
     ) {
-        this.type = type;
+        validator = new RegExp(validator.source, validator.flags);
         this.validator = validator;
         this.acter = acter;
+        this.type = type;
 
         /* add this function to appropriate file */
         switch (type) {
@@ -228,7 +230,7 @@ new Command(
 
 /* mdadvhook */
 new Command(
-    /\#mdadvhook<(\w+)>([\w\W]+?)\#mdendhook/,
+    /\#mdadvhook<(\w+)>([\w\W]+)\#mdendhook<\1>/m,
     (match, parser) => {
         if (parser.opts.adv_hooks[match[1]]) {
             const innerElements = match[2].trim();

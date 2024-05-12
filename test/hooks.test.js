@@ -12,7 +12,7 @@ describe("Use of markdown hooks for SSR", () => {
     });
     it("should allow advanced hooks to be used", () => {
         util.put(
-            "#mdadvhook<test>\n<b>Bold</b>\n<p>Paragraph</p>\n#mdendhook",
+            "#mdadvhook<test>\n<b>Bold</b>\n<p>Paragraph</p>\n#mdendhook<test>",
             "sample1.md"
         );
 
@@ -41,7 +41,7 @@ describe("Use of markdown hooks for SSR", () => {
     });
     it("should allow for hooks to be used in HTML with advanced hooks", () => {
         util.put(
-            "<html><body>#mdadvhook<test>\n<b>Bold</b>\n<p>Paragraph</p>\n#mdendhook</body></html>",
+            "<html><body>#mdadvhook<test><b>Bold</b><p>Paragraph</p>#mdendhook<test></body></html>",
             "sample1.html"
         );
 
@@ -63,7 +63,7 @@ describe("Use of markdown hooks for SSR", () => {
     });
     it("should allow for extracting a node from the document as a template manually with ids", () => {
         util.put(
-            `<html><body>#mdadvhook<template><name id="b"></name><class id="p"></class>#mdendhook</body></html>`,
+            `<html><body>#mdadvhook<template><name id="b"></name><class id="p"></class>#mdendhook<template></body></html>`,
             "sample1.html"
         );
 
@@ -91,7 +91,7 @@ describe("Use of markdown hooks for SSR", () => {
     });
     it("should allow for extracting a node from the document as a template using map and data-tags", () => {
         util.put(
-            `<html><body>#mdadvhook<template><name data-tag="b"></name><class data-tag="p"></class>#mdendhook</body></html>`,
+            `<html><body>#mdadvhook<template><name data-tag="b"></name><class data-tag="p"></class>#mdendhook<template></body></html>`,
             "sample1.html"
         );
 

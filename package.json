@@ -1,6 +1,6 @@
 {
     "name": "markdown-maker",
-    "version": "1.10.1",
+    "version": "1.10.2",
     "description": "A superset-compiler for markdown using marked",
     "main": "src/main.ts",
     "bin": {
@@ -26,7 +26,8 @@
         "marked": "^2.0.1",
         "node-html-parser": "^6.1.13",
         "require-runtime": "^2.0.0",
-        "ws": "^8.8.1"
+        "ws": "^8.8.1",
+        "xregexp": "^5.1.1"
     },
     "devDependencies": {
         "@types/argparse": "^2.0.16",
@@ -34,6 +35,7 @@
         "@types/colors": "^1.2.1",
         "@types/node": "^15.6.1",
         "@types/ws": "^8.5.3",
+        "@types/xregexp": "^4.4.0",
         "cloc": "^2.7.0",
         "mocha": "^8.3.1",
         "prettier": "^2.3.0",
