@@ -4,16 +4,16 @@ import Parser from "./parser";
 import * as fs from "fs";
 const choki = require("chokidar");
 
-import { argParser, CLArgs as CommmandLineArgs, ParserOptions } from "./cltool";
+import { argParser, CommandLineArgs, ParserOptions } from "./cltool";
 const configFileName = ".mdmconfig.json";
 
 function main() {
-    let clargs: CommmandLineArgs;
+    let clargs: CommandLineArgs;
     let server: WebSocketServer | undefined;
 
     /* Read config file or parse args from cmd-line */
     if (fs.existsSync(configFileName)) {
-        let data: CommmandLineArgs = JSON.parse(
+        let data: CommandLineArgs = JSON.parse(
             fs.readFileSync(configFileName).toString()
         ).opts;
 
@@ -66,17 +66,12 @@ function main() {
     };
 
     const internalCooldown = 1000;
-    function watcher(event, path) {
+    function watcher(_: Event, path: string) {
         const now = Date.now();
 
         if (!this.time) this.time = now;
-
         if (now - this.time < internalCooldown) return;
-
-        console.log(path);
-
         console.log(`Detected change in ${path}...`);
-
         try {
             compile(clargs.src, clargs.output, () => {
                 /* after compile, send refresh command to clients */
@@ -98,9 +93,10 @@ function main() {
 
     if (clargs.debug) console.dir(clargs);
 
-    /* compile once */
+    /* compile once if not watching 
+       otherwise watch the folder and recompile on change */
     if (!clargs.watch) compile(clargs.src, clargs.output);
-    /* watch the folder and recompile on change */ else {
+    else {
         const srcDirName = path.dirname(clargs.src);
         console.log(`Watching ${srcDirName} for changes...`.yellow);
         server = new WebSocketServer({ port: 7788 });

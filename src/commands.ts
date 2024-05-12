@@ -7,19 +7,30 @@ import * as nodeHtmlParser from "node-html-parser";
 import XRegExp from "xregexp";
 
 export class MDMError extends Error {
-    match: RegExpMatchArray;
-    constructor(message: string, match: RegExpMatchArray) {
+    match?: RegExpMatchArray;
+    constructor(message: string, match?: RegExpMatchArray) {
         super(message);
         this.name = "MDMError";
         this.match = match;
     }
 }
 
-export const commands: {
+export class MDMWarn extends Error {
+    match?: RegExpMatchArray;
+    constructor(message: string, match?: RegExpMatchArray) {
+        super(message);
+        this.name = "MDMWarn";
+        this.match = match;
+    }
+}
+
+export type CommandGroupType = {
     preparse: Command[];
     parse: Command[];
     postparse: Command[];
-} = {
+};
+
+export const commands: CommandGroupType = {
     preparse: [],
     parse: [],
     postparse: [],
@@ -65,7 +76,7 @@ export class Command {
         }
     }
 
-    act(match, parser) {
+    act(match : RegExpMatchArray, parser : Parser) {
         return this.acter(match, parser);
     }
 }
@@ -92,7 +103,7 @@ new Command(
     (match, parser) => {
         let value = parser.opts.defs[match[1]];
         if (!value && !parser.opts.allow_undefined)
-            throw new Error(`Undefined variable: ${match[1]}`);
+            throw new MDMError(`Undefined variable: ${match[1]}`);
         return (value = value || `<${match[1]}>`);
     },
     CommandType.PARSE
@@ -106,7 +117,7 @@ new Command(
         parser.opts.depth++;
 
         if (parser.opts.depth > parser.opts.max_depth) {
-            throw new Error("max depth exceeded!");
+            throw new MDMError("max depth exceeded!");
         }
 
         /* get the matching group */
@@ -123,7 +134,7 @@ new Command(
             if (fs.existsSync(path.join(parser.wd, name, `${name}.md`))) {
                 name = path.join(name, `${name}.md`);
             } else {
-                throw new Error(
+                throw new MDMError(
                     `No entry file found in folder "${name}". Looking for "${name}.md"`
                 );
             }
@@ -179,7 +190,7 @@ new Command(
             if (title === match[1]) break;
 
             if (i === parser.opts.secs.length - 1)
-                throw new Error(
+                throw new MDMError(
                     `Reference to [${match[1]}] could not be resolved!`
                 );
         }
@@ -232,39 +243,56 @@ new Command(
 new Command(
     /\#mdadvhook<(\w+)>([\w\W]+)\#mdendhook<\1>/m,
     (match, parser) => {
-        if (parser.opts.adv_hooks[match[1]]) {
-            const innerElements = match[2].trim();
-            /* Find tagNames in innerElements */
-            const re = /<(\w+)[\s=\w\"\'-]*>/g;
-            const tags = [];
-            innerElements.match(re)?.forEach((tag) => {
-                tags.push(tag.slice(1, -1).split(" ")[0]);
-            });
-            /* Evil type hack */
-            const root = nodeHtmlParser.parse(innerElements, {
-                voidTag: {
-                    tags,
-                    closingSlash: true,
-                },
-            }) as any as HTMLElement;
+        if (!parser.opts.adv_hooks[match[1]])
+            throw new MDMError(`No advanced hook found for ${match[1]}`, match);
 
-            const helper = (node: HTMLElement) => {
-                /*  */
-                const map: { [tag: string]: HTMLElement } = {};
-                for (let tag of tags) {
-                    const el = node.getElementsByTagName(tag)[0];
-                    const dataTag = el.toString().match(/data-tag="([\w-]+)"/);
-                    if (!dataTag || dataTag[1] == undefined) continue;
-                    el.tagName = dataTag[1];
-                    el.removeAttribute("data-tag");
-                    map[tag] = el;
-                }
-                return map;
-            };
+        const innerElements = match[2].trim();
 
-            const hooked = parser.opts.adv_hooks[match[1]](root, helper(root));
-            return hooked.toString();
-        }
+        /* Run the inner elements through the parser itself */
+        const innerParser = new Parser(innerElements, parser.clargs, {
+            ...parser.opts,
+            parent: parser,
+        });
+
+        /* parse the inner */
+        const parsedInner = innerParser.get(parser.opts.targetType).trim();
+
+        /* Find all tagged elements in inner */
+        const re = /<(\w+)[\s=\w\"\'-]*>/g;
+        const taggedElements = [];
+        parsedInner.match(re)?.forEach((tag) => {
+            taggedElements.push(tag.slice(1, -1).split(" ")[0]);
+        });
+
+        /* Parse and cast the nodeHTMLElement as a regular HTMLElement */
+        const root = nodeHtmlParser.parse(parsedInner, {
+            voidTag: {
+                tags: taggedElements,
+                closingSlash: true,
+            },
+        }) as any as HTMLElement;
+
+        const helper = (node: HTMLElement) => {
+            /*  */
+            const map: { [tag: string]: HTMLElement } = {};
+            for (let tag of taggedElements) {
+                const el = node.getElementsByTagName(tag)[0];
+                const dataTag = el.toString().match(/data-tag="([\w-]+)"/);
+
+                let htmlTag = "p"; /* default tag */
+                if (!dataTag || dataTag[1] == undefined)
+                    continue; /* TODO: warn that no tag was added and "p" tag is used */
+                else htmlTag = dataTag[1];
+
+                el.tagName = htmlTag;
+                el.removeAttribute("data-tag");
+                map[tag] = el;
+            }
+            return map;
+        };
+
+        const hooked = parser.opts.adv_hooks[match[1]](root, helper(root));
+        return hooked.toString();
     },
     CommandType.POSTPARSE
 );

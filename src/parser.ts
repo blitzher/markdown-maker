@@ -5,8 +5,21 @@ import Colors = require("colors.ts"); /* for adding colours to strings */
 Colors.enable();
 import marked from "marked";
 
-import { Command, commands, load_extensions, MDMError } from "./commands";
-import { argParser, CLArgs as CommandLineArgs, ParserOptions } from "./cltool";
+import {
+    Command,
+    CommandGroupType,
+    commands,
+    CommandType,
+    load_extensions,
+    MDMError,
+    MDMWarn,
+} from "./commands";
+import {
+    argParser,
+    CommandLineArgs,
+    IncompleteParserOptions,
+    ParserOptions,
+} from "./cltool";
 
 enum TargetType {
     HTML,
@@ -33,18 +46,15 @@ class Parser {
     constructor(
         filename: string,
         clargs?: CommandLineArgs,
-        opts?: {
-            parent?: Parser;
-            isFileCallback?: (s: string) => false | string;
-        }
+        opts?: IncompleteParserOptions
     ) {
         /* this.working_directory */
         this.file = filename;
 
-        if (!opts) opts = {};
-
-        /* the parent parser */
-        this.parent = opts.parent;
+        /* get default options, and overwrite with the ones present
+           in the argument */
+        this.opts = defaultParserOptions();
+        Object.assign(this.opts, opts);
 
         this.line_num = 0;
         this.wd = path.dirname(filename);
@@ -52,32 +62,6 @@ class Parser {
 
         /* finished blob */
         this.blobs = {};
-
-        /* all options */
-        this.clargs = clargs;
-        this.opts = {
-            defs: {},
-            secs: [],
-            args: [],
-            depth: 0,
-            verbose: false,
-            debug: false,
-            max_depth: 5,
-            use_underscore: false,
-            toc_level: 3,
-            allow_undefined: false,
-            html: false,
-            watch: false,
-            targetType: undefined,
-            only_warn: false,
-            parent: undefined,
-            hooks: {},
-            adv_hooks: {},
-            isFileCallback: (f) => {
-                if (!fs.existsSync(f)) return false;
-                return fs.readFileSync(f, "utf-8") + "\n";
-            },
-        };
 
         if (!clargs) {
             clargs = argParser.parse_args([filename]);
@@ -186,15 +170,30 @@ class Parser {
                 command.validator.source,
                 (command.validator.flags || "") + "g"
             );
-            blob = blob.replace(re, (...args) => command.act(args, this) || "");
+
+            const replacer = (...args: RegExpMatchArray) => {
+                try {
+                    return command.act(args, this) || "";
+                } catch (error) {
+                    if (error instanceof MDMError) {
+                        throw error;
+                    } else if (error instanceof MDMWarn) {
+                        console.warn(error);
+                        return `**Warning: ${error.message}**`;
+                    }
+                }
+            };
+
+            blob = blob.replace(re, replacer);
         });
         return blob;
     }
 
-    parse_all_commands(blob: string, commands: { [key: string]: Command[] }) {
-        Object.keys(commands).forEach((key) => {
-            blob = this.parse_commands(blob, commands[key]);
-        });
+    /* Parse all commands sequentially on a sub-blob */
+    parse_all_commands(blob: string, commands: CommandGroupType) {
+        blob = this.parse_commands(blob, commands.preparse);
+        blob = this.parse_commands(blob, commands.parse);
+        blob = this.parse_commands(blob, commands.postparse);
         return blob;
     }
 
@@ -232,13 +231,13 @@ class Parser {
 
     add_hook(name: string, hook: () => string) {
         if (this.opts.hooks[name] != undefined)
-            throw new Error(`Hook ${name} already exists!`);
+            throw new MDMError(`Hook ${name} already exists!`);
         this.opts.hooks[name] = hook;
     }
 
     add_adv_hook(name: string, hook: (tree: HTMLElement) => HTMLElement) {
         if (this.opts.hooks[name] != undefined)
-            throw new Error(`Hook ${name} already exists!`);
+            throw new MDMError(`Hook ${name} already exists!`);
         this.opts.adv_hooks[name] = hook;
     }
 
@@ -278,7 +277,12 @@ class Parser {
         const htmlFormatted = marked(this.get(TargetType.HTML));
         if (this.opts.watch) {
             return (
-                `<script>w=new WebSocket("ws:localhost:7788");w.addEventListener("message",(e)=>{if(e.data=="refresh")location.reload();});</script>\n` +
+                `<script>` +
+                `w=new WebSocket("ws:localhost:7788");` +
+                `w.addEventListener("message",(e)=>` +
+                `   {if(e.data=="refresh")location.reload();}` +
+                `);` +
+                `</script>\n` +
                 htmlFormatted
             );
         }
@@ -301,6 +305,9 @@ class Parser {
                 if (callback) callback(blob);
                 return blob;
             } catch (error) {
+                if (!(error instanceof Error)) {
+                    throw error;
+                }
                 /* Compile a traceback of error */
                 let traceback = "";
                 let p: Parser = this;
@@ -326,6 +333,32 @@ class Parser {
             }
         }
     }
+}
+
+function defaultParserOptions(): ParserOptions {
+    return {
+        defs: {},
+        secs: [],
+        args: [],
+        depth: 0,
+        verbose: false,
+        debug: false,
+        max_depth: 5,
+        use_underscore: false,
+        toc_level: 3,
+        allow_undefined: false,
+        html: false,
+        watch: false,
+        targetType: undefined,
+        only_warn: false,
+        parent: undefined,
+        hooks: {},
+        adv_hooks: {},
+        isFileCallback: (f) => {
+            if (!fs.existsSync(f)) return false;
+            return fs.readFileSync(f, "utf-8") + "\n";
+        },
+    };
 }
 
 export function splice(

@@ -64,7 +64,7 @@ argParser.add_argument("--allow-undefined", "-A", {
 });
 //#endregion
 
-export type CLArgs = {
+export type CommandLineArgs = {
     src: string;
     output: string;
     verbose: boolean;
@@ -107,4 +107,35 @@ export type ParserOptions = {
         ) => HTMLElement;
     };
     isFileCallback: (s: string) => false | string;
+};
+
+export type IncompleteParserOptions = {
+    defs?: {
+        [key: string]: string;
+    };
+    secs?: {
+        level: number;
+        title: string;
+    }[];
+    args?: string[];
+    depth?: number;
+    verbose?: boolean;
+    debug?: boolean;
+    max_depth?: number;
+    use_underscore?: boolean;
+    toc_level?: number;
+    allow_undefined?: boolean;
+    html?: boolean;
+    watch?: boolean;
+    targetType?: TargetType | undefined;
+    only_warn?: boolean;
+    parent?: Parser;
+    hooks?: { [key: string]: () => string };
+    adv_hooks?: {
+        [key: string]: (
+            tree: HTMLElement,
+            map: { [tag: string]: HTMLElement }
+        ) => HTMLElement;
+    };
+    isFileCallback?: (s: string) => false | string;
 };

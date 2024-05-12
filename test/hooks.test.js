@@ -63,7 +63,7 @@ describe("Use of markdown hooks for SSR", () => {
     });
     it("should allow for extracting a node from the document as a template manually with ids", () => {
         util.put(
-            `<html><body>#mdadvhook<template><name id="b"></name><class id="p"></class>#mdendhook<template></body></html>`,
+            `<html><body>#mdadvhook<template><name data-tag="b"></name><class data-tag="p"></class>#mdendhook<template></body></html>`,
             "sample1.html"
         );
 
@@ -110,5 +110,23 @@ describe("Use of markdown hooks for SSR", () => {
             output,
             "<html><body><b>bold</b><p>paragraph</p></body></html>\n\n"
         );
+    });
+    it("should allow for nested hooks to be used", () => {
+        util.put(
+            '#mdadvhook<t1><outer1 data-tag="p">#mdadvhook<t2><inner>#mdendhook<t2><outer2 data-tag="p">#mdendhook<t1>',
+            "sample1.md"
+        );
+
+        const parser = new util.Parser("test/test-files/sample1.md", {
+            allow_undefined: true,
+        });
+        parser.add_adv_hook("t1", (elem) => {
+            elem.set_content("outer");
+            return elem;
+        });
+
+        const output = parser.get();
+
+        util.assert.strictEqual(output, "hello\nworld\n!\n!\n\n");
     });
 });
