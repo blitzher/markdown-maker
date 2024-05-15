@@ -1,13 +1,16 @@
-const fs = require("fs"); /* for handling reading of files */
-const path = require("path"); /* for handling file paths */
+import fs from "fs"; /* for handling reading of files */
+import path from "path"; /* for handling file paths */
 
 import Colors = require("colors.ts"); /* for adding colours to strings */
 import { TargetType } from "./commands";
 import Parser from "./parser";
 
+const version = JSON.parse(
+    fs.readFileSync(path.join(__dirname, "../package.json")).toString()
+).version; /* get the version from package.json */
+
 Colors.enable();
 import { ArgumentParser } from "argparse"; /* for parsing clargs */
-const { version } = require("../package.json"); /* package version number */
 
 export const argParser = new ArgumentParser({
     description:
@@ -19,7 +22,10 @@ export const argParser = new ArgumentParser({
 argParser.add_argument("src", {
     help: "file to be parsed. If this is a directory, it looks for entry point in the directory, see --entry",
 });
-argParser.add_argument("--version", { action: "version", version });
+argParser.add_argument("--version", {
+    action: "version",
+    version: `v${version}`,
+});
 argParser.add_argument("-v", "--verbose", {
     action: "store_true",
     help: "enable verbose output",
@@ -78,6 +84,20 @@ export type CommandLineArgs = {
     allow_undefined: boolean;
 };
 
+export type IncompleteCommandLineArgs = {
+    src?: string;
+    output?: string;
+    verbose?: boolean;
+    debug?: boolean;
+    max_depth?: number;
+    entry?: string;
+    watch?: boolean;
+    use_underscore?: boolean;
+    toc_level?: number;
+    html?: boolean;
+    allow_undefined?: boolean;
+};
+
 export type ParserOptions = {
     defs: {
         [key: string]: string;
@@ -101,10 +121,7 @@ export type ParserOptions = {
     parent?: Parser;
     hooks: { [key: string]: () => string };
     adv_hooks: {
-        [key: string]: (
-            tree: HTMLElement,
-            map: { [tag: string]: HTMLElement }
-        ) => HTMLElement;
+        [key: string]: (map: { [tag: string]: HTMLElement }) => void;
     };
     isFileCallback: (s: string) => false | string;
 };

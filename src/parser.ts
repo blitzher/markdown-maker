@@ -1,403 +1,406 @@
 import fs from "fs"; /* for handling reading of files */
 import path from "path"; /* for handling file paths */
 
-import Colors = require("colors.ts"); /* for adding colours to strings */
-Colors.enable();
 import marked from "marked";
 
 import {
-    Command,
-    CommandGroupType,
-    commands,
-    CommandType,
-    load_extensions,
-    MDMError,
-    MDMWarn,
+	Command,
+	CommandGroupType,
+	commands,
+	load_extensions,
+	MDMError,
+	MDMWarn,
 } from "./commands";
 import {
-    argParser,
-    CommandLineArgs,
-    IncompleteParserOptions,
-    ParserOptions,
+	argParser,
+	IncompleteCommandLineArgs,
+	IncompleteParserOptions,
+	ParserOptions,
 } from "./cltool";
 
 enum TargetType {
-    HTML,
-    MARKDOWN,
+	HTML,
+	MARKDOWN,
 }
 
 /* parse some md
  * recursively with extra options */
 class Parser {
-    file: string;
-    parent?: Parser;
-    line_num: number;
-    wd: string;
-    wd_full: string;
-    blobs: {
-        [key: number]: string | undefined;
-    };
-    opts: ParserOptions;
-    clargs: CommandLineArgs;
-    raw: string;
+	file: string;
+	parent?: Parser;
+	line_num: number;
+	wd: string;
+	wd_full: string;
+	blobs: {
+		[key: number]: string | undefined;
+	};
+	opts: ParserOptions;
+	raw: string;
 
-    static TOKEN = "#md";
+	static TOKEN = "#md";
 
-    constructor(
-        filename: string,
-        clargs?: CommandLineArgs,
-        opts?: IncompleteParserOptions
-    ) {
-        /* this.working_directory */
-        this.file = filename;
+	constructor(
+		filename: string,
+		clargs?: IncompleteCommandLineArgs,
+		opts?: IncompleteParserOptions
+	) {
+		/* this.working_directory */
+		this.file = filename;
 
-        /* get default options, and overwrite with the ones present
-           in the argument */
-        this.opts = defaultParserOptions();
-        Object.assign(this.opts, opts);
+		this.line_num = 0;
+		this.wd = path.dirname(filename);
+		this.wd_full = path.resolve(this.wd);
 
-        this.line_num = 0;
-        this.wd = path.dirname(filename);
-        this.wd_full = path.resolve(this.wd);
+		/* finished blob */
+		this.blobs = {};
 
-        /* finished blob */
-        this.blobs = {};
+		if (!clargs) {
+			clargs = argParser.parse_args([filename]);
+		}
 
-        if (!clargs) {
-            clargs = argParser.parse_args([filename]);
-        }
+		/* get default options, and overwrite with the ones present
+           in the arguments */
+		this.opts = defaultParserOptions();
+		Object.assign(this.opts, clargs);
+		Object.assign(this.opts, opts);
 
-        /* append all commandline arguments to this */
-        Object.assign(this.opts, clargs);
-        Object.assign(this.opts, opts);
+		this.raw = this.opts.isFileCallback(filename) || filename;
+	}
 
-        this.raw = this.opts.isFileCallback(filename) || filename;
-    }
+	/**
+	 * parse wrapper for handling
+	 * preprocessing, parsing and postprocess
+	 **/
+	parse() {
+		load_extensions(this);
+		if (this.opts.verbose || this.opts.debug) {
+			console.log(
+				`parsing ${this.file}: depth=${this.opts.depth}`.magenta
+			);
+		}
 
-    /**
-     * parse wrapper for handling
-     * preprocessing, parsing and postprocess
-     **/
-    parse() {
-        load_extensions(this);
-        if (this.opts.verbose || this.opts.debug) {
-            console.log(
-                Colors.colors(
-                    "magenta",
-                    "parsing " + this.file + ": depth=" + this.opts.depth
-                )
-            );
-        }
+		if (this.opts.debug) {
+			console.log("Parsing options:");
+			console.log(this.opts);
+		}
 
-        if (this.opts.debug) {
-            console.log("Parsing options:");
-            console.log(this.opts);
-        }
+		/* reset sections for beginning parse */
+		if (this.opts.depth === 0) this.opts.secs = [];
+		let __blob;
 
-        /* reset sections for beginning parse */
-        if (this.opts.depth === 0) this.opts.secs = [];
-        let __blob;
+		/* apply preproccessing to raw file */
+		__blob = this.preprocess(this.raw);
 
-        /* apply preproccessing to raw file */
-        __blob = this.preprocess(this.raw);
+		/* main parser instance call */
+		__blob = this.mainparse(__blob);
 
-        /* main parser instance call */
-        __blob = this.mainparse(__blob);
+		/**
+		 * apply postprocessing after */
+		__blob = this.postprocess(__blob);
 
-        /**
-         * apply postprocessing after */
-        __blob = this.postprocess(__blob);
+		return __blob;
+	}
 
-        return __blob;
-    }
+	mainparse(blob: string) {
+		if (this.opts.verbose || this.opts.debug) {
+			console.debug(`beginning mainparse of '${this.file}'`.blue);
+		}
 
-    mainparse(blob: string) {
-        if (this.opts.verbose || this.opts.debug) {
-            console.debug(`beginning mainparse of '${this.file}'`.blue);
-        }
+		/* main parser instance loop */
+		blob.split("\n").forEach((line, lnum) => {
+			this.line_num = lnum;
 
-        /* main parser instance loop */
-        blob.split("\n").forEach((line, lnum) => {
-            this.line_num = lnum;
+			/* if line looks like a title */
+			const titleMatch = line.trim().match(/^(#+) (.+)$/);
 
-            /* if line looks like a title */
-            const titleMatch = line.trim().match(/^(#+) (.+)$/);
+			if (titleMatch) {
+				if (this.opts.verbose || this.opts.debug)
+					console.log("found toc element: " + line);
 
-            if (titleMatch) {
-                if (this.opts.verbose || this.opts.debug)
-                    console.log("found toc element: " + line);
+				/* implement toc level */
+				let level = titleMatch[1].length;
+				let title = titleMatch[2];
 
-                /* implement toc level */
-                let level = titleMatch[1].length;
-                let title = titleMatch[2];
+				this.opts.secs.push({ level, title });
 
-                this.opts.secs.push({ level, title });
+				if (this.opts.debug) {
+					console.log("updated sections:", { level, title });
+				}
+			}
+		});
 
-                if (this.opts.debug) {
-                    console.log("updated sections:", { level, title });
-                }
-            }
-        });
+		return this.parse_commands(blob, commands.parse);
+	}
 
-        return this.parse_commands(blob, commands.parse);
-    }
+	preprocess(blob: string) {
+		if (this.opts.verbose || this.opts.debug) {
+			console.debug(`beginning preprocess of '${this.file}'`.blue);
+		}
 
-    preprocess(blob: string) {
-        if (this.opts.verbose || this.opts.debug) {
-            console.debug(`beginning preprocess of '${this.file}'`.blue);
-        }
+		return this.parse_commands(blob, commands.preparse);
+	}
 
-        return this.parse_commands(blob, commands.preparse);
-    }
+	postprocess(blob: string) {
+		if (this.opts.verbose || this.opts.debug) {
+			console.debug(`beginning postprocess of '${this.file}'`.blue);
+		}
 
-    postprocess(blob: string) {
-        if (this.opts.verbose || this.opts.debug) {
-            console.debug(`beginning postprocess of '${this.file}'`.blue);
-        }
+		blob = this.parse_commands(blob, commands.postparse);
 
-        blob = this.parse_commands(blob, commands.postparse);
+		/* remove double empty lines */
+		blob = this.remove_double_blank_lines(blob);
+		blob = blob.trimEnd() + "\n\n";
+		return blob;
+	}
 
-        /* remove double empty lines */
-        blob = this.remove_double_blank_lines(blob);
-        blob = blob.trimEnd() + "\n\n";
-        return blob;
-    }
+	parse_commands(blob: string, commands: Command[]) {
+		commands.forEach((command) => {
+			/* Add global flag to RegExp */
+			const re = new RegExp(
+				command.validator.source,
+				(command.validator.flags || "") + "g"
+			);
 
-    parse_commands(blob: string, commands: Command[]) {
-        commands.forEach((command) => {
-            /* Add global flag to RegExp */
-            const re = new RegExp(
-                command.validator.source,
-                (command.validator.flags || "") + "g"
-            );
+			const replacer = (...args: RegExpMatchArray) => {
+				try {
+					return command.act(args, this) || "";
+				} catch (error) {
+					if (error.name == "MDMError") {
+						throw error;
+					} else if (error.name == "MDMWarn") {
+						console.warn(error);
+						return `**Warning: ${error.message}**`;
+					}
+				}
+			};
 
-            const replacer = (...args: RegExpMatchArray) => {
-                try {
-                    return command.act(args, this) || "";
-                } catch (error) {
-                    if (error instanceof MDMError) {
-                        throw error;
-                    } else if (error instanceof MDMWarn) {
-                        console.warn(error);
-                        return `**Warning: ${error.message}**`;
-                    }
-                }
-            };
+			blob = blob.replace(re, replacer);
+		});
+		return blob;
+	}
 
-            blob = blob.replace(re, replacer);
-        });
-        return blob;
-    }
+	/* Parse all commands sequentially on a sub-blob */
+	parse_all_commands(blob: string, commands: CommandGroupType) {
+		blob = this.parse_commands(blob, commands.preparse);
+		blob = this.parse_commands(blob, commands.parse);
+		blob = this.parse_commands(blob, commands.postparse);
+		return blob;
+	}
 
-    /* Parse all commands sequentially on a sub-blob */
-    parse_all_commands(blob: string, commands: CommandGroupType) {
-        blob = this.parse_commands(blob, commands.preparse);
-        blob = this.parse_commands(blob, commands.parse);
-        blob = this.parse_commands(blob, commands.postparse);
-        return blob;
-    }
+	titleId(title: string) {
+		const sep = this.opts.use_underscore ? "_" : "-";
 
-    titleId(title: string) {
-        const sep = this.opts.use_underscore ? "_" : "-";
+		title = title
+			.toLowerCase()
+			.replace(/[^\w\s]+/g, "")
+			.replace(/[\s_]+/g, sep);
+		return title;
+	}
 
-        title = title
-            .toLowerCase()
-            .replace(/[^\w\s]+/g, "")
-            .replace(/[\s_]+/g, sep);
-        return title;
-    }
+	gen_toc() {
+		let __blob = [];
+		let tabSize = 2;
+		const beg = "* ";
+		const hor = " ".repeat(tabSize);
 
-    gen_toc() {
-        let __blob = [];
-        let tabSize = 2;
-        const beg = "* ";
-        const hor = " ".repeat(tabSize);
+		this.opts.secs.forEach((sec) => {
+			if (sec.level > this.opts.toc_level) return;
+			let title = sec.title.replace(/_/g, " ");
+			title = this.parse_all_commands(title, commands);
+			const link = this.titleId(title);
 
-        this.opts.secs.forEach((sec) => {
-            if (sec.level > this.opts.toc_level) return;
-            let title = sec.title.replace(/_/g, " ");
-            title = this.parse_all_commands(title, commands);
-            const link = this.titleId(title);
+			let __line =
+				hor.repeat(Math.max(sec.level - 1, 0)) +
+				beg +
+				`[${title}](#${link})`;
 
-            let __line =
-                hor.repeat(Math.max(sec.level - 1, 0)) +
-                beg +
-                `[${title}](#${link})`;
+			__blob.push(__line);
+		});
+		return __blob.join("\n");
+	}
 
-            __blob.push(__line);
-        });
-        return __blob.join("\n");
-    }
+	add_hook(name: string, hook: () => string) {
+		if (this.opts.hooks[name] != undefined)
+			throw new MDMError(`Hook ${name} already exists!`);
+		this.opts.hooks[name] = hook;
+	}
 
-    add_hook(name: string, hook: () => string) {
-        if (this.opts.hooks[name] != undefined)
-            throw new MDMError(`Hook ${name} already exists!`);
-        this.opts.hooks[name] = hook;
-    }
+	add_adv_hook(
+		name: string,
+		hook: (map: { [key: string]: HTMLElement }) => void
+	) {
+		if (this.opts.hooks[name] != undefined)
+			throw new MDMError(`Hook ${name} already exists!`);
+		this.opts.adv_hooks[name] = hook;
+	}
 
-    add_adv_hook(name: string, hook: (tree: HTMLElement) => HTMLElement) {
-        if (this.opts.hooks[name] != undefined)
-            throw new MDMError(`Hook ${name} already exists!`);
-        this.opts.adv_hooks[name] = hook;
-    }
+	line_num_from_index(index: number) {
+		return this.raw.substring(0, index).split("\n").length + 1;
+	}
 
-    line_num_from_index(index: number) {
-        return this.raw.substring(0, index).split("\n").length + 1;
-    }
+	remove_double_blank_lines(blob) {
+		/* replace all triple newlines, and EOF by double newline */
+		blob = blob.replace(/(\r\n|\n){3,}/g, "\n\n");
 
-    remove_double_blank_lines(blob) {
-        /* replace all triple newlines, and EOF by double newline */
-        blob = blob.replace(/(\r\n|\n){3,}/g, "\n\n");
+		return blob;
+	}
 
-        return blob;
-    }
+	/* output the parsed document to bundle */
+	to(bundleName: string, callback: (fileName: string) => void) {
+		const dir = path.dirname(bundleName);
+		if (callback === undefined) callback = () => {};
 
-    /* output the parsed document to bundle */
-    to(bundleName: string, callback: (fileName: string) => void) {
-        const dir = path.dirname(bundleName);
-        if (callback === undefined) callback = () => {};
+		if (!fs.existsSync(dir)) {
+			fs.mkdirSync(dir, { recursive: true });
+		}
 
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
+		if (!this.opts.html) {
+			this.get(TargetType.MARKDOWN, (blob) => {
+				fs.writeFile(bundleName, blob, () => callback(bundleName));
+			});
+		} else {
+			const htmlFileName = bundleName.replace(".md", ".html");
+			fs.writeFile(htmlFileName, this.html(), () =>
+				callback(htmlFileName)
+			);
+		}
+	}
 
-        if (!this.opts.html) {
-            this.get(TargetType.MARKDOWN, (blob) => {
-                fs.writeFile(bundleName, blob, () => callback(bundleName));
-            });
-        } else {
-            const htmlFileName = bundleName.replace(".md", ".html");
-            fs.writeFile(htmlFileName, this.html(), () =>
-                callback(htmlFileName)
-            );
-        }
-    }
+	html() {
+		const htmlFormatted = marked
+			.parse(this.get(TargetType.HTML))
+			.toString();
+		if (this.opts.watch) {
+			return (
+				`<script>` +
+				`w=new WebSocket("ws:localhost:7788");` +
+				`w.addEventListener("message",(e)=>` +
+				`   {if(e.data=="refresh")location.reload();}` +
+				`);` +
+				`</script>\n` +
+				htmlFormatted
+			);
+		}
+		return htmlFormatted;
+	}
 
-    html() {
-        const htmlFormatted = marked(this.get(TargetType.HTML));
-        if (this.opts.watch) {
-            return (
-                `<script>` +
-                `w=new WebSocket("ws:localhost:7788");` +
-                `w.addEventListener("message",(e)=>` +
-                `   {if(e.data=="refresh")location.reload();}` +
-                `);` +
-                `</script>\n` +
-                htmlFormatted
-            );
-        }
-        return htmlFormatted;
-    }
+	child(file: string) {
+		return new Parser(file, undefined, {
+			parent: this,
+			depth: this.opts.depth + 1,
+		});
+	}
 
-    get(targetType?: TargetType, callback?: (blob: string) => void): string {
-        /* If target type is undefined, markdown is the default */
-        if (targetType === undefined) targetType = TargetType.MARKDOWN;
-        if (this.blobs[targetType]) {
-            if (callback) {
-                callback(this.blobs[targetType]);
-            }
-            return this.blobs[targetType];
-        } else {
-            try {
-                this.opts.targetType = targetType;
-                let blob = this.parse();
-                this.opts.targetType = undefined;
-                if (callback) callback(blob);
-                return blob;
-            } catch (error) {
-                if (!(error instanceof Error)) {
-                    throw error;
-                }
-                /* Compile a traceback of error */
-                let traceback = "";
-                let p: Parser = this;
+	get(targetType?: TargetType, callback?: (blob: string) => void): string {
+		/* If target type is undefined, markdown is the default */
+		if (targetType === undefined) targetType = TargetType.MARKDOWN;
+		if (this.blobs[targetType]) {
+			if (callback) {
+				callback(this.blobs[targetType]);
+			}
+			return this.blobs[targetType];
+		} else {
+			try {
+				this.opts.targetType = targetType;
+				let blob = this.parse();
+				this.opts.targetType = undefined;
+				if (callback) callback(blob);
+				return blob;
+			} catch (error) {
+				/* Compile a traceback of error */
+				let traceback = "";
+				let p: Parser = this;
 
-                do {
-                    if (error instanceof MDMError)
-                        traceback += `\n...on line ${p.line_num_from_index(
-                            error.match.index
-                        )} in ${p.file}`.grey(15);
-                    else
-                        traceback +=
-                            `\n...on line ${p.line_num} in ${p.file}`.grey(15);
-                    if (p.parent) p = p.parent;
-                } while (p.parent);
+				do {
+					if (error instanceof MDMError)
+						traceback += `\n...on line ${p.line_num_from_index(
+							error.match.index
+						)} in ${p.file}`.grey(15);
+					else
+						traceback +=
+							`\n...on line ${p.line_num} in ${p.file}`.grey(15);
+					if (p.parent) p = p.parent;
+				} while (p.parent);
 
-                error.message += traceback;
+				error.message += traceback;
 
-                /* only interested in node stacktrace when debugging */
-                if (!this.opts.debug) error.stack = "";
+				/* only interested in node stacktrace when debugging */
+				if (!this.opts.debug) error.stack = "";
 
-                if (this.opts.only_warn) console.error(error);
-                else throw error;
-            }
-        }
-    }
+				if (this.opts.only_warn) console.error(error);
+				else throw error;
+			}
+		}
+	}
 }
 
 function defaultParserOptions(): ParserOptions {
-    return {
-        defs: {},
-        secs: [],
-        args: [],
-        depth: 0,
-        verbose: false,
-        debug: false,
-        max_depth: 5,
-        use_underscore: false,
-        toc_level: 3,
-        allow_undefined: false,
-        html: false,
-        watch: false,
-        targetType: undefined,
-        only_warn: false,
-        parent: undefined,
-        hooks: {},
-        adv_hooks: {},
-        isFileCallback: (f) => {
-            if (!fs.existsSync(f)) return false;
-            return fs.readFileSync(f, "utf-8") + "\n";
-        },
-    };
+	return {
+		defs: {},
+		secs: [],
+		args: [],
+		depth: 0,
+		verbose: false,
+		debug: false,
+		max_depth: 5,
+		use_underscore: false,
+		toc_level: 3,
+		allow_undefined: false,
+		html: false,
+		watch: false,
+		targetType: undefined,
+		only_warn: false,
+		parent: undefined,
+		hooks: {},
+		adv_hooks: {},
+		isFileCallback: (f) => {
+			if (!fs.existsSync(f)) return false;
+			return fs.readFileSync(f, "utf-8") + "\n";
+		},
+	};
 }
 
 export function splice(
-    str: string,
-    startIndex: number,
-    width: number,
-    newSubStr: string
+	str: string,
+	startIndex: number,
+	width: number,
+	newSubStr: string
 ) {
-    const start = str.slice(0, startIndex);
-    const end = str.slice(startIndex + width);
-    return start + newSubStr + end;
+	const start = str.slice(0, startIndex);
+	const end = str.slice(startIndex + width);
+	return start + newSubStr + end;
 }
 
 /* add extention to marked for classed blockquotes*/
 marked.use({
-    renderer: {
-        blockquote(quote) {
-            /* find the ending, and if not, return the default */
-            const ending = quote.match(/\{(.+)\}\s*<\/p>/);
-            if (!ending) return `<blockquote>${quote}</blockquote>`;
+	renderer: {
+		blockquote(quote: string) {
+			/* find the ending, and if not, return the default */
+			const ending = quote.match(/\{(.+)\}\s*<\/p>/);
+			if (!ending) return `<blockquote>${quote}</blockquote>`;
 
-            const args = ending[1].split(" ");
+			const args = ending[1].split(" ");
 
-            const classes = args.filter((arg) => arg.startsWith("."));
-            const id = args.filter((arg) => arg.startsWith("#"));
+			const classes = args.filter((arg) => arg.startsWith("."));
+			const id = args.filter((arg) => arg.startsWith("#"));
 
-            const classNames = classes.map((c) => c.slice(1));
-            const classText =
-                classes.length > 0 ? `class="${classNames.join(" ")}"` : "";
-            const idText = id.length > 0 ? `id="${id[0].slice(1)}"` : "";
+			const classNames = classes.map((c) => c.slice(1));
+			const classText =
+				classes.length > 0 ? `class="${classNames.join(" ")}"` : "";
+			const idText = id.length > 0 ? `id="${id[0].slice(1)}"` : "";
 
-            /* remove the ending from the quote */
-            quote = quote.replace(/\{(.+)\}\s*<\/p>/, "</p>");
+			/* remove the ending from the quote */
+			quote = quote.replace(/\{(.+)\}\s*<\/p>/, "</p>");
 
-            return `<blockquote ${classText} ${idText}>\n${quote.trim()}</blockquote>`;
-        },
-    },
+			return `<blockquote ${classText} ${idText}>\n${quote.trim()}</blockquote>`;
+		},
+		heading(text: string, level: number) {
+			/* add an id to each heading */
+			return `<h${level} id="${text
+				.replace(/ /g, "-")
+				.toLowerCase()}">${text}</h${level}>`;
+		},
+	},
 });
-
-module.exports = Parser;
 
 export default Parser;

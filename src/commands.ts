@@ -4,7 +4,6 @@ import * as fs from "fs";
 import templates, { new_template } from "./templates";
 import requireRuntime from "require-runtime";
 import * as nodeHtmlParser from "node-html-parser";
-import XRegExp from "xregexp";
 
 export class MDMError extends Error {
     match?: RegExpMatchArray;
@@ -140,13 +139,7 @@ new Command(
             }
         }
 
-        const recursiveParser = new Parser(
-            path.join(parser.wd, name),
-            parser.clargs,
-            {
-                parent: parser,
-            }
-        );
+        const recursiveParser = parser.child(path.join(parser.wd, name));
 
         /* keep the options the same */
         recursiveParser.opts = parser.opts;
@@ -228,20 +221,9 @@ new Command(
     CommandType.POSTPARSE
 );
 
-/* basic mdhook */
-new Command(
-    /#mdhook<(\w+)>/,
-    (match, parser) => {
-        if (parser.opts.hooks[match[1]]) {
-            return parser.opts.hooks[match[1]]();
-        }
-    },
-    CommandType.POSTPARSE
-);
-
 /* mdadvhook */
 new Command(
-    /\#mdadvhook<(\w+)>([\w\W]+)\#mdendhook<\1>/m,
+    /\#mdhook<(\w+)>([\w\W]+)\#mdendhook<\1>/m,
     (match, parser) => {
         if (!parser.opts.adv_hooks[match[1]])
             throw new MDMError(`No advanced hook found for ${match[1]}`, match);
@@ -249,10 +231,7 @@ new Command(
         const innerElements = match[2].trim();
 
         /* Run the inner elements through the parser itself */
-        const innerParser = new Parser(innerElements, parser.clargs, {
-            ...parser.opts,
-            parent: parser,
-        });
+        const innerParser = parser.child(innerElements);
 
         /* parse the inner */
         const parsedInner = innerParser.get(parser.opts.targetType).trim();
@@ -280,7 +259,7 @@ new Command(
                 const dataTag = el.toString().match(/data-tag="([\w-]+)"/);
 
                 let htmlTag = "p"; /* default tag */
-                if (!dataTag || dataTag[1] == undefined)
+                if (!dataTag || dataTag[1] == undefined || typeof dataTag[1] !== "string")
                     continue; /* TODO: warn that no tag was added and "p" tag is used */
                 else htmlTag = dataTag[1];
 
@@ -291,8 +270,9 @@ new Command(
             return map;
         };
 
-        const hooked = parser.opts.adv_hooks[match[1]](root, helper(root));
-        return hooked.toString();
+        /* Run the hook */
+        parser.opts.adv_hooks[match[1]](helper(root));
+        
     },
     CommandType.POSTPARSE
 );

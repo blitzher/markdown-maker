@@ -1,5 +1,9 @@
 {
     "editor.formatOnPaste": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "prettier.tabWidth": 4
+    "prettier.tabWidth": 4,
+    "prettier.useEditorConfig": true,
+    "prettier.configPath": "",
+    "prettier.requireConfig": false,
+    "prettier.useTabs": true
 }

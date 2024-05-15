@@ -1,8 +1,13 @@
 import path from "path";
 import { WebSocketServer } from "ws";
-import Parser from "./parser";
 import * as fs from "fs";
-const choki = require("chokidar");
+
+import choki from "chokidar";
+import Parser from "./parser";
+
+/* for adding colours to strings */
+import { enable as ColorsEnable } from "colors.ts";
+ColorsEnable();
 
 import { argParser, CommandLineArgs, ParserOptions } from "./cltool";
 const configFileName = ".mdmconfig.json";
