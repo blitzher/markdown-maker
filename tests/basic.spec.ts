@@ -47,12 +47,17 @@ describe("Basic features", () => {
 		util.put("#mdinclude<sample2.md>", "sample1.md");
 		util.put("yo.md>", "sample2.md");
 
-		assert.throws(() => {
-			const parser = new util.Parser("tests/test-files/sample1.md", {
-				max_depth: 0,
-			});
-			parser.get();
-		}, MDMError);
+		assert.throws(
+			() => {
+				const parser = new util.Parser("tests/test-files/sample1.md", {
+					max_depth: 0,
+				});
+				parser.get();
+			},
+			(error: MDMError) => {
+				return error.message.includes("max depth exceeded!");
+			}
+		);
 	});
 	it("should be able to reference toc elements, even if they are below toc-level", () => {
 		const parser = new util.Parser(`### Title\n#mdref<Title>`);

@@ -10,6 +10,7 @@ import {
 	load_extensions,
 	MDMError,
 	MDMWarn,
+	TaggedElement,
 } from "./commands";
 import {
 	argParser,
@@ -17,6 +18,7 @@ import {
 	IncompleteParserOptions,
 	ParserOptions,
 } from "./cltool";
+import { HTMLElement } from "node-html-parser";
 
 enum TargetType {
 	HTML,
@@ -219,19 +221,13 @@ class Parser {
 		return __blob.join("\n");
 	}
 
-	add_hook(name: string, hook: () => string) {
-		if (this.opts.hooks[name] != undefined)
-			throw new MDMError(`Hook ${name} already exists!`);
-		this.opts.hooks[name] = hook;
-	}
-
-	add_adv_hook(
+	add_hook(
 		name: string,
-		hook: (map: { [key: string]: HTMLElement }) => void
+		hook: (map: { [key: string]: TaggedElement }) => void
 	) {
 		if (this.opts.hooks[name] != undefined)
 			throw new MDMError(`Hook ${name} already exists!`);
-		this.opts.adv_hooks[name] = hook;
+		this.opts.hooks[name] = hook;
 	}
 
 	line_num_from_index(index: number) {
@@ -284,10 +280,11 @@ class Parser {
 		return htmlFormatted;
 	}
 
-	child(file: string) {
+	createChild(file: string) {
 		return new Parser(file, undefined, {
 			parent: this,
 			depth: this.opts.depth + 1,
+			...this.opts,
 		});
 	}
 
@@ -352,7 +349,6 @@ function defaultParserOptions(): ParserOptions {
 		only_warn: false,
 		parent: undefined,
 		hooks: {},
-		adv_hooks: {},
 		isFileCallback: (f) => {
 			if (!fs.existsSync(f)) return false;
 			return fs.readFileSync(f, "utf-8") + "\n";

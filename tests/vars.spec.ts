@@ -8,20 +8,20 @@ describe("Use variables", () => {
 		assert.strictEqual(output, "\nyo\n\n");
 	});
 	it("should use variable shorthand", () => {
-		const output = new util.Parser("#mddef<hi=yo>\n<hi>").get();
+		const output = new util.Parser("#mddef<hi=yo>\n!<hi>").get();
 
 		assert.strictEqual(output, "\nyo\n\n");
 	});
 	it("should use variables across files", () => {
 		util.put("#mddef<hi=yo>\n#mdinclude<sample2.md>", "sample1.md");
-		util.put("<hi>", "sample2.md");
+		util.put("!<hi>", "sample2.md");
 
 		const output = new util.Parser("tests/test-files/sample1.md").get();
 
 		assert.strictEqual(output, "\nyo\n\n");
 	});
 	it("should throw if undefined variable", () => {
-		const parser = new util.Parser("<yo>");
+		const parser = new util.Parser("!<yo>");
 
 		let e;
 		/* should throw an error */
@@ -36,7 +36,7 @@ describe("Use variables", () => {
 	});
 
 	it("should preserve whatever comes after", () => {
-		const output = new util.Parser("#mddef<hi=yo>\n<hi>,").get();
+		const output = new util.Parser("#mddef<hi=yo>\n!<hi>,").get();
 		assert.strictEqual(output, "\nyo,\n\n");
 	});
 

@@ -1,44 +1,43 @@
 {
-    "name": "markdown-maker",
-    "version": "1.10.2",
-    "description": "A superset-compiler for markdown using marked",
-    "main": "src/main.ts",
-    "bin": {
-        "mdparse": "bundle/main.js"
-    },
-    "scripts": {
-        "test": "jest",
-        "bundle": "tsc --project tsconfig.json",
-        "main": "node bundle/main.js document/main.md -o dist/bundle.md --debug",
-        "debug": "node src/main.js -db document/main.md -o dist/bundle.md",
-        "clean": "rm -rf bundle bin",
-        "pretest": "npm run bundle"
-    },
-    "keywords": [],
-    "author": "blitzher",
-    "license": "MIT",
-    "dependencies": {
-        "argparse": "^2.0.1",
-        "chokidar": "^3.5.1",
-        "colors.ts": "^1.0.20",
-        "marked": "^12.0.2",
-        "node-html-parser": "^6.1.13",
-        "require-runtime": "^2.0.0",
-        "ts-node": "^10.9.2",
-        "ws": "^8.8.1"
-    },
-    "devDependencies": {
-        "@types/argparse": "^2.0.16",
-        "@types/chokidar": "^2.1.3",
-        "@types/colors": "^1.2.1",
-        "@types/jest": "^29.5.12",
-        "@types/node": "^15.6.1",
-        "@types/ws": "^8.5.3",
-        "@types/xregexp": "^4.4.0",
-        "cloc": "^2.7.0",
-        "jest": "^29.7.0",
-        "prettier": "^2.3.0",
-        "ts-jest": "^29.1.2",
-        "typescript": "^4.3.2"
-    }
+	"name": "markdown-maker",
+	"version": "1.10.2",
+	"description": "A superset-compiler for markdown using marked",
+	"main": "src/main.ts",
+	"bin": {
+		"mdparse": "bundle/main.js"
+	},
+	"scripts": {
+		"test": "jest",
+		"bundle": "tsc --project tsconfig.json",
+		"main": "node bundle/main.js document/main.md -o dist/bundle.md --debug",
+		"clean": "rm -rf bundle bin",
+		"pretest": "npm run bundle"
+	},
+	"keywords": [],
+	"author": "blitzher",
+	"license": "MIT",
+	"dependencies": {
+		"argparse": "^2.0.1",
+		"chokidar": "^3.5.1",
+		"colors.ts": "^1.0.20",
+		"marked": "^12.0.2",
+		"node-html-parser": "^6.1.13",
+		"require-runtime": "^2.0.0",
+		"ts-node": "^10.9.2",
+		"ws": "^8.8.1"
+	},
+	"devDependencies": {
+		"@types/argparse": "^2.0.16",
+		"@types/chokidar": "^2.1.3",
+		"@types/colors": "^1.2.1",
+		"@types/jest": "^29.5.12",
+		"@types/node": "^15.6.1",
+		"@types/ws": "^8.5.3",
+		"@types/xregexp": "^4.4.0",
+		"cloc": "^2.7.0",
+		"jest": "^29.7.0",
+		"prettier": "^2.3.0",
+		"ts-jest": "^29.1.2",
+		"typescript": "^4.3.2"
+	}
 }

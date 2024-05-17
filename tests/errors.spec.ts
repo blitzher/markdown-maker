@@ -12,7 +12,12 @@ describe("Error handling", () => {
 			'Template "UNDEF" not found!' +
 			"\n...on line 1 in tests/test-files/sample1.md".grey(15);
 
-		assert.throws(parser.get, MDMError, answer);
+		assert.throws(
+			() => parser.get(),
+			(error: MDMError) => {
+				return error.message == answer;
+			}
+		);
 	});
 	it("should dissallow loading a folder without an entry file", () => {
 		util.put("#mdinclude<sample_fld>", "sample1.md");
@@ -24,6 +29,11 @@ describe("Error handling", () => {
 			'No entry file found in folder "sample_fld". Looking for "sample_fld.md"' +
 			"\n...on line 1 in tests/test-files/sample1.md".grey(15);
 
-		assert.throws(parser.get, MDMError, answer);
+		assert.throws(
+			() => parser.get(),
+			(error: MDMError) => {
+				return error.message == answer;
+			}
+		);
 	});
 });
