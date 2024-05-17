@@ -1,5 +1,10 @@
 {
-    "editor.formatOnPaste": true,
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "prettier.tabWidth": 4
+	"editor.formatOnPaste": true,
+	"editor.defaultFormatter": "esbenp.prettier-vscode",
+	"prettier.tabWidth": 4,
+	"prettier.useEditorConfig": true,
+	"prettier.configPath": "",
+	"prettier.requireConfig": false,
+	"prettier.useTabs": true,
+	"jest.jestCommandLine": "npx jest -i"
 }
