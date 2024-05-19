@@ -6,44 +6,15 @@ import requireRuntime from "require-runtime";
 import * as nodeHtmlParser from "node-html-parser";
 import { HTMLElement } from "node-html-parser";
 import crypto from "crypto";
+import {
+	CommandGroupType,
+	CommandType,
+	TaggedElement,
+	TargetType,
+} from "./types";
+import { MDMError } from "./errors";
 
 const salt = crypto.randomBytes(2).toString("hex");
-
-export class MDMError extends Error {
-	match?: RegExpMatchArray;
-	constructor(message: string, match?: RegExpMatchArray) {
-		super(message);
-		this.name = "MDMError";
-		this.match = match;
-	}
-}
-
-export class MDMWarn extends Error {
-	match?: RegExpMatchArray;
-	constructor(message: string, match?: RegExpMatchArray) {
-		super(message);
-		this.name = "MDMWarn";
-		this.match = match;
-	}
-}
-
-export type CommandGroupType = {
-	preparse: Command[];
-	parse: Command[];
-	postparse: Command[];
-};
-
-type TaggedElementArguments = {
-	repeat?: number;
-};
-
-export type TaggedElement = {
-	"html-tag": string;
-	"var-tag": string;
-	_raw: string;
-	args: TaggedElementArguments;
-	node: HTMLElement;
-};
 
 export const commands: CommandGroupType = {
 	preparse: [],
@@ -51,25 +22,14 @@ export const commands: CommandGroupType = {
 	postparse: [],
 };
 
-export enum CommandType {
-	PREPARSE,
-	PARSE,
-	POSTPARSE,
-}
-
-export enum TargetType {
-	HTML,
-	MARKDOWN,
-}
-
 export class Command {
 	validator: RegExp;
-	acter: (match: RegExpMatchArray, parser: Parser) => string | void;
+	acter: (match: RegExpExecArray, parser: Parser) => string | void;
 	type: CommandType;
 
 	constructor(
 		validator: RegExp,
-		acter: (match: RegExpMatchArray, parser: Parser) => string | void,
+		acter: (match: RegExpExecArray, parser: Parser) => string | void,
 		type: CommandType
 	) {
 		validator = new RegExp(validator.source, validator.flags);
@@ -91,7 +51,7 @@ export class Command {
 		}
 	}
 
-	act(match: RegExpMatchArray, parser: Parser) {
+	act(match: RegExpExecArray, parser: Parser) {
 		return this.acter(match, parser);
 	}
 }
@@ -118,7 +78,7 @@ new Command(
 	(match, parser) => {
 		let value = parser.opts.defs[match[1]];
 		if (!value && !parser.opts.allow_undefined)
-			throw new MDMError(`Undefined variable: ${match[1]}`);
+			throw new MDMError(`Undefined variable: ${match[1]}`, match);
 		return (value = value || `<${match[1]}>`);
 	},
 	CommandType.PARSE
@@ -128,11 +88,11 @@ new Command(
 new Command(
 	/#mdinclude<([\w.\/-]+)(?:[,\s]+([\w]+))?>/,
 	(match, parser) => {
-		/* increase the current recursive depth */
+		/* increment the current recursion depth */
 		parser.opts.depth++;
 
 		if (parser.opts.depth > parser.opts.max_depth) {
-			throw new MDMError("max depth exceeded!");
+			throw new MDMError("max depth exceeded!", match);
 		}
 
 		/* get the matching group */
@@ -146,11 +106,13 @@ new Command(
 			/* check if a file with the same name of the
 			 * exists in the folder */
 
-			if (fs.existsSync(path.join(parser.wd, name, `${name}.md`))) {
+			const entry = path.join(parser.wd, name, `${name}.md`);
+			if (fs.existsSync(entry)) {
 				name = path.join(name, `${name}.md`);
 			} else {
 				throw new MDMError(
-					`No entry file found in folder "${name}". Looking for "${name}.md"`
+					`No entry file found in folder "${name}". Looking for "${entry}"`,
+					match
 				);
 			}
 		}
@@ -200,7 +162,8 @@ new Command(
 
 			if (i === parser.opts.secs.length - 1)
 				throw new MDMError(
-					`Reference to [${match[1]}] could not be resolved!`
+					`Reference to [${match[1]}] could not be resolved!`,
+					match
 				);
 		}
 
@@ -233,7 +196,7 @@ new Command(
 /* mdmaketoc */
 new Command(
 	/#mdmaketoc(?:<>)?/,
-	(match, parser) => parser.gen_toc(),
+	(match, parser) => parser.get_toc(),
 	CommandType.POSTPARSE
 );
 

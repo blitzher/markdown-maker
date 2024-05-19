@@ -1,5 +1,4 @@
 import util from "./_test-util";
-import assert from "assert";
 
 describe("Marked extentions", () => {
 	it("should add a single class to blockquotes", () => {
@@ -10,8 +9,7 @@ describe("Marked extentions", () => {
 
 		const output = parser.html();
 
-		assert.strictEqual(
-			output,
+		util.expect(output).toBe(
 			'<blockquote class="one" >\n<p>hello </p></blockquote>'
 		);
 	});
@@ -23,8 +21,7 @@ describe("Marked extentions", () => {
 
 		const output = parser.html();
 
-		assert.strictEqual(
-			output,
+		util.expect(output).toBe(
 			'<blockquote class="one two" >\n<p>hello </p></blockquote>'
 		);
 	});
@@ -36,8 +33,7 @@ describe("Marked extentions", () => {
 
 		const output = parser.html();
 
-		assert.strictEqual(
-			output,
+		util.expect(output).toBe(
 			'<blockquote class="one" id="myid">\n<p>hello </p></blockquote>'
 		);
 	});

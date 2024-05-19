@@ -1,5 +1,4 @@
 import util from "./_test-util";
-import assert from "assert";
 
 describe("HTML Emitting", () => {
 	it("should generate valid html", () => {
@@ -8,8 +7,7 @@ describe("HTML Emitting", () => {
 
 		const output = parser.html();
 
-		assert.strictEqual(
-			output,
+		util.expect(output).toBe(
 			'<h1 id="cool-title">cool title</h1><p>with a cool paragraph</p>\n'
 		);
 	});
@@ -20,6 +18,6 @@ describe("HTML Emitting", () => {
 		const parser = new util.Parser("tests/test-files/sample1.md");
 		const output = parser.get();
 
-		assert.strictEqual(output, "#mdvar<lul>\n\n");
+		util.expect(output).toBe("#mdvar<lul>\n\n");
 	});
 });

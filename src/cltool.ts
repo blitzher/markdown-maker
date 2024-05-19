@@ -2,7 +2,7 @@ import fs from "fs"; /* for handling reading of files */
 import path from "path"; /* for handling file paths */
 
 import Colors = require("colors.ts"); /* for adding colours to strings */
-import { TaggedElement, TargetType } from "./commands";
+import { TaggedElement, TargetType } from "./types";
 import Parser from "./parser";
 
 const version = JSON.parse(

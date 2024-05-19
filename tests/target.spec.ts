@@ -1,5 +1,4 @@
 import util from "./_test-util";
-import assert from "assert";
 
 describe("Target specific functionality", () => {
 	describe("HTML", () => {
@@ -7,7 +6,7 @@ describe("Target specific functionality", () => {
 			const parser = new util.Parser("#mdlabel<0,Cool!>");
 			const html = parser.get(util.TargetType.HTML);
 
-			assert.strictEqual(html, '<span id="cool"></span>\n\n');
+			util.expect(html).toBe('<span id="cool"></span>\n\n');
 		});
 
 		it("Should link to sections with #mdref", () => {
@@ -16,8 +15,7 @@ describe("Target specific functionality", () => {
 			);
 			const html = parser.get(util.TargetType.HTML);
 
-			assert.strictEqual(
-				html,
+			util.expect(html).toBe(
 				'<span id="cool"></span>\n<span id="coolzz"></span>\n<a href="#cool">Cool!</a>\n\n'
 			);
 		});
@@ -28,15 +26,14 @@ describe("Target specific functionality", () => {
 			const parser = new util.Parser("#mdlabel<0,Cool!>");
 
 			const md = parser.get(util.TargetType.MARKDOWN);
-			assert.strictEqual(md, "\n\n");
+			util.expect(md).toBe("\n\n");
 		});
 		it("Should include #mdref to title elements in markdown", () => {
 			const output = new util.Parser(
 				"# Some Title!\n#mdref<Some Title!>"
 			).get();
 
-			assert.strictEqual(
-				output,
+			util.expect(output).toBe(
 				"# Some Title!\n[Some Title!](#some-title)\n\n"
 			);
 		});

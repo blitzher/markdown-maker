@@ -1,4 +1,4 @@
-import { MDMError } from "./commands";
+import { MDMError, MDMNonParserError } from "./errors";
 
 const templates: { [key: string]: string } = {};
 
@@ -8,9 +8,9 @@ const templates: { [key: string]: string } = {};
  * @param content The replacement string
  */
 export function new_template(name: string, content: string) {
-    if (name in templates)
-        throw new MDMError(`Template ${name} already exists`);
-    templates[name] = content;
+	if (name in templates)
+		throw new MDMNonParserError(`Template "${name}" already exists`);
+	templates[name] = content;
 }
 
 /* initialize default templates */

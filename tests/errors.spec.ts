@@ -1,6 +1,5 @@
-import { MDMError } from "../src/commands";
+import { MDMError, MDMNonParserError } from "../src/errors";
 import util from "./_test-util";
-import assert from "assert";
 
 describe("Error handling", () => {
 	it("should dissallow undefined templates", () => {
@@ -12,28 +11,47 @@ describe("Error handling", () => {
 			'Template "UNDEF" not found!' +
 			"\n...on line 1 in tests/test-files/sample1.md".grey(15);
 
-		assert.throws(
-			() => parser.get(),
-			(error: MDMError) => {
-				return error.message == answer;
-			}
-		);
+		util.expect(() => parser.get()).toThrow(MDMError);
 	});
 	it("should dissallow loading a folder without an entry file", () => {
 		util.put("#mdinclude<sample_fld>", "sample1.md");
 		util.putDir("sample_fld");
 
-		const parser = new util.Parser("tests/test-files/sample1.md");
+		function get() {
+			const parser = new util.Parser("tests/test-files/sample1.md");
+			parser.get();
+		}
 
 		let answer =
-			'No entry file found in folder "sample_fld". Looking for "sample_fld.md"' +
+			'No entry file found in folder "sample_fld". Looking for "tests/test-files/sample_fld/sample_fld.md"' +
 			"\n...on line 1 in tests/test-files/sample1.md".grey(15);
 
-		assert.throws(
-			() => parser.get(),
-			(error: MDMError) => {
-				return error.message == answer;
-			}
+		util.expect(get).toThrow(MDMError);
+		util.expect(get).toThrow(answer);
+	});
+	it("should dissallow adding more than one hook with the same name", () => {
+		const parser = new util.Parser("tests/test-files/sample1.md");
+
+		parser.add_hook("test", () => {});
+		util.expect(() => parser.add_hook("test", () => {})).toThrow(
+			MDMNonParserError
 		);
+	});
+	describe("Duplicate key errors", () => {
+		beforeEach(() => {
+			util.put(
+				"module.exports = {main: (new_template, new_command) => {new_template('test', 'hello');}};",
+				"extensions.js"
+			);
+		});
+		it("should dissallow adding more than one template with the same name", () => {
+			function get() {
+				const parser = new util.Parser("");
+				parser.get();
+			}
+
+			util.expect(get).toThrow(MDMNonParserError);
+			util.expect(get).toThrow('Template "test" already exists!');
+		});
 	});
 });

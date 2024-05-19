@@ -1,8 +1,8 @@
 import fs from "fs";
-import assert from "assert/strict";
 import Parser from "../src/parser";
 import path from "path";
-import html from "node-html-parser";
+import { expect, jest, test } from "@jest/globals";
+import { TargetType } from "../src/types";
 
 beforeEach(() => {
 	return new Promise((res, rej) => {
@@ -22,11 +22,6 @@ function putDir(name: string) {
 	fs.mkdirSync(path.join("tests", "test-files", name));
 }
 
-const TargetType = {
-	HTML: 0,
-	MARKDOWN: 1,
-};
-
 beforeEach(() => {
 	return new Promise((res, rej) => {
 		fs.mkdir("tests/test-files", res);
@@ -35,14 +30,12 @@ beforeEach(() => {
 
 afterEach(() => {
 	return new Promise((res, rej) => {
-		fs.rmdir("tests/test-files", { recursive: true }, res);
+		fs.rm("tests/test-files", { recursive: true }, res);
 	});
 });
 
 export default {
-	assert,
-	fs,
-	html,
+	expect,
 	path,
 	Parser,
 	put,

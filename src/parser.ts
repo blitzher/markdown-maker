@@ -3,27 +3,15 @@ import path from "path"; /* for handling file paths */
 
 import marked from "marked";
 
-import {
-	Command,
-	CommandGroupType,
-	commands,
-	load_extensions,
-	MDMError,
-	MDMWarn,
-	TaggedElement,
-} from "./commands";
+import { Command, commands, load_extensions } from "./commands";
 import {
 	argParser,
 	IncompleteCommandLineArgs,
 	IncompleteParserOptions,
 	ParserOptions,
 } from "./cltool";
-import { HTMLElement } from "node-html-parser";
-
-enum TargetType {
-	HTML,
-	MARKDOWN,
-}
+import { MDMError, MDMNonParserError, MDMWarning } from "./errors";
+import { CommandGroupType, TaggedElement, TargetType } from "./types";
 
 /* parse some md
  * recursively with extra options */
@@ -69,11 +57,7 @@ class Parser {
 		this.raw = this.opts.isFileCallback(filename) || filename;
 	}
 
-	/**
-	 * parse wrapper for handling
-	 * preprocessing, parsing and postprocess
-	 **/
-	parse() {
+	private parse() {
 		load_extensions(this);
 		if (this.opts.verbose || this.opts.debug) {
 			console.log(
@@ -88,10 +72,10 @@ class Parser {
 
 		/* reset sections for beginning parse */
 		if (this.opts.depth === 0) this.opts.secs = [];
-		let __blob;
+		let __blob = this.raw;
 
 		/* apply preproccessing to raw file */
-		__blob = this.preprocess(this.raw);
+		__blob = this.preprocess(__blob);
 
 		/* main parser instance call */
 		__blob = this.mainparse(__blob);
@@ -103,7 +87,7 @@ class Parser {
 		return __blob;
 	}
 
-	mainparse(blob: string) {
+	private mainparse(blob: string) {
 		if (this.opts.verbose || this.opts.debug) {
 			console.debug(`beginning mainparse of '${this.file}'`.blue);
 		}
@@ -134,7 +118,7 @@ class Parser {
 		return this.parse_commands(blob, commands.parse);
 	}
 
-	preprocess(blob: string) {
+	private preprocess(blob: string) {
 		if (this.opts.verbose || this.opts.debug) {
 			console.debug(`beginning preprocess of '${this.file}'`.blue);
 		}
@@ -142,7 +126,7 @@ class Parser {
 		return this.parse_commands(blob, commands.preparse);
 	}
 
-	postprocess(blob: string) {
+	private postprocess(blob: string) {
 		if (this.opts.verbose || this.opts.debug) {
 			console.debug(`beginning postprocess of '${this.file}'`.blue);
 		}
@@ -155,7 +139,7 @@ class Parser {
 		return blob;
 	}
 
-	parse_commands(blob: string, commands: Command[]) {
+	private parse_commands(blob: string, commands: Command[]) {
 		commands.forEach((command) => {
 			/* Add global flag to RegExp */
 			const re = new RegExp(
@@ -163,26 +147,38 @@ class Parser {
 				(command.validator.flags || "") + "g"
 			);
 
-			const replacer = (...args: RegExpMatchArray) => {
+			const replacer = (args: RegExpExecArray) => {
 				try {
 					return command.act(args, this) || "";
 				} catch (error) {
-					if (error.name == "MDMError") {
-						throw error;
-					} else if (error.name == "MDMWarn") {
-						console.warn(error);
-						return `**Warning: ${error.message}**`;
+					switch (true) {
+						case error instanceof MDMError:
+							throw error;
+						case error instanceof MDMWarning:
+							console.warn(error.message);
+							return `**Warning: ${error.message}**`;
+						default:
+							console.error(error);
+							throw error;
 					}
 				}
 			};
 
-			blob = blob.replace(re, replacer);
+			/*  */
+
+			let match: RegExpExecArray | null;
+			while ((match = re.exec(blob)) !== null) {
+				blob =
+					blob.slice(0, match.index) +
+					replacer(match) +
+					blob.slice(match.index + match[0].length);
+			}
 		});
 		return blob;
 	}
 
 	/* Parse all commands sequentially on a sub-blob */
-	parse_all_commands(blob: string, commands: CommandGroupType) {
+	private parse_all_commands(blob: string, commands: CommandGroupType) {
 		blob = this.parse_commands(blob, commands.preparse);
 		blob = this.parse_commands(blob, commands.parse);
 		blob = this.parse_commands(blob, commands.postparse);
@@ -199,7 +195,7 @@ class Parser {
 		return title;
 	}
 
-	gen_toc() {
+	get_toc() {
 		let __blob = [];
 		let tabSize = 2;
 		const beg = "* ";
@@ -226,15 +222,15 @@ class Parser {
 		hook: (map: { [key: string]: TaggedElement }) => void
 	) {
 		if (this.opts.hooks[name] != undefined)
-			throw new MDMError(`Hook ${name} already exists!`);
+			throw new MDMNonParserError(`Hook "${name}" already exists!`);
 		this.opts.hooks[name] = hook;
 	}
 
-	line_num_from_index(index: number) {
-		return this.raw.substring(0, index).split("\n").length + 1;
+	private line_num_from_index(index: number) {
+		return this.raw.substring(0, index).split("\n").length;
 	}
 
-	remove_double_blank_lines(blob) {
+	private remove_double_blank_lines(blob) {
 		/* replace all triple newlines, and EOF by double newline */
 		blob = blob.replace(/(\r\n|\n){3,}/g, "\n\n");
 
