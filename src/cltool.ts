@@ -5,9 +5,7 @@ import Colors = require("colors.ts"); /* for adding colours to strings */
 import { TaggedElement, TargetType } from "./types";
 import Parser from "./parser";
 
-const version = JSON.parse(
-	fs.readFileSync(path.join(__dirname, "../package.json")).toString()
-).version; /* get the version from package.json */
+const version = process.env.npm_package_version || "0.0.0";
 
 Colors.enable();
 import { ArgumentParser } from "argparse"; /* for parsing clargs */

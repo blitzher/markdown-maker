@@ -38,20 +38,27 @@ describe("Error handling", () => {
 		);
 	});
 	describe("Duplicate key errors", () => {
-		beforeEach(() => {
+		it("should dissallow adding more than one template with the same name", () => {
+			/*  */
 			util.put(
-				"module.exports = {main: (new_template, new_command) => {new_template('test', 'hello');}};",
+				`module.exports = {main: (new_template, new_command) =>
+					{
+						new_template('test', 'hello');
+						new_template('test', 'hello');
+					}
+				};`,
 				"extensions.js"
 			);
-		});
-		it("should dissallow adding more than one template with the same name", () => {
+
+			util.put("", "sample1.md");
+
 			function get() {
-				const parser = new util.Parser("");
+				const parser = new util.Parser("tests/test-files/sample1.md");
 				parser.get();
 			}
 
 			util.expect(get).toThrow(MDMNonParserError);
-			util.expect(get).toThrow('Template "test" already exists!');
+			util.expect(get).toThrow('Template "test" already exists');
 		});
 	});
 });

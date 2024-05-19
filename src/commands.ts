@@ -264,7 +264,7 @@ new Command(
 const loaded_extentions: fs.PathLike[] = [];
 
 function load_extension(parser: Parser, file: fs.PathLike) {
-	if (loaded_extentions.includes(file)) return;
+	// if (loaded_extentions.includes(file)) return;
 	if (fs.existsSync(file)) {
 		const extensions = requireRuntime(file);
 		loaded_extentions.push(file);

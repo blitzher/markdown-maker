@@ -9,7 +9,7 @@
 	"scripts": {
 		"test": "jest",
 		"bundle": "tsc --project tsconfig.json",
-		"main": "node bundle/main.js document/main.md -o dist/bundle.md --debug",
+		"main": "node bundle/main.js",
 		"clean": "rm -rf bundle bin",
 		"pretest": "npm run bundle"
 	},

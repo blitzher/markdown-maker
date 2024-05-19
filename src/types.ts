@@ -29,3 +29,5 @@ export enum TargetType {
 	HTML,
 	MARKDOWN,
 }
+
+export type Checksum = string;

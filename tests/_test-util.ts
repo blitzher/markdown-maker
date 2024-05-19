@@ -4,16 +4,16 @@ import path from "path";
 import { expect, jest, test } from "@jest/globals";
 import { TargetType } from "../src/types";
 
-beforeEach(() => {
+beforeAll(() => {
 	return new Promise((res, rej) => {
 		fs.mkdir(path.join("tests", "test-files"), res);
 	});
 });
-afterEach(() => {
-	return new Promise((res, rej) => {
-		fs.rm(path.join("tests", "test-files"), { recursive: true }, res);
-	});
-});
+// afterAll(() => {
+// 	return new Promise((res, rej) => {
+// 		fs.rm(path.join("tests", "test-files"), { recursive: true }, res);
+// 	});
+// });
 
 function put(text: string | NodeJS.ArrayBufferView, file: string) {
 	fs.writeFileSync(path.join("tests", "test-files", file), text);
