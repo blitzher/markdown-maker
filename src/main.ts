@@ -10,6 +10,7 @@ import { enable as ColorsEnable } from "colors.ts";
 ColorsEnable();
 
 import { argParser, CommandLineArgs, ParserOptions } from "./cltool";
+import { log } from "console";
 const configFileName = ".mdmconfig.json";
 
 function main() {
@@ -54,6 +55,7 @@ function main() {
 		);
 		fs.writeFileSync(configFileName, template);
 		fs.writeFileSync("main.md", "# Main\n");
+		console.log(`Created config file ${configFileName.green}`);
 		return;
 	}
 
