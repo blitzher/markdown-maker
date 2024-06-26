@@ -1,6 +1,6 @@
 {
 	"name": "markdown-maker",
-	"version": "1.10.2",
+	"version": "1.10.3",
 	"description": "A superset-compiler for markdown using marked",
 	"main": "src/main.ts",
 	"bin": {

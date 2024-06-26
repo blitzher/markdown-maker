@@ -261,6 +261,28 @@ new Command(
 	CommandType.POSTPARSE
 );
 
+new Command(
+	/<(\w+)([\#\.\w]+)\n([\w\W]*?)>/,
+	(match, _) => {
+		const tag = match[1];
+		const tagline = match[2];
+		const id = tagline.match(/#(\w+)/)
+			? `id="${tagline.match(/#(\w+)/)[1]}"`
+			: "";
+		const cls = tagline.match(/\.(.+)/);
+		let cls_str = "";
+		if (cls) {
+			cls_str =
+				cls.length > 1 ? `class="${cls[1].replace(".", " ")}"` : "";
+		}
+
+		const content = match[3];
+
+		return `<${tag} ${id} ${cls_str}>${content.trim()}</${tag}>`;
+	},
+	CommandType.POSTPARSE
+);
+
 const loaded_extentions: fs.PathLike[] = [];
 
 function load_extension(parser: Parser, file: fs.PathLike) {

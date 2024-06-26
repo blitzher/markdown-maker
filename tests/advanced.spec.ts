@@ -90,3 +90,13 @@ describe("Use of markdown hooks for SSR", () => {
 		util.expect(output).toBe("<p>hello</p><p>!</p><p>world</p>\n\n");
 	});
 });
+
+describe("Emmet-style html elements", () => {
+	const parser = new util.Parser("<div#id.cls1.cls2\nHello!>");
+
+	it("should parse emmet-style elements", () => {
+		util.expect(parser.get()).toBe(
+			'<div id="id" class="cls1 cls2">Hello!</div>\n\n'
+		);
+	});
+});
