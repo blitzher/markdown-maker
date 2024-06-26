@@ -1,11 +1,12 @@
 import fs from "fs"; /* for handling reading of files */
 import path from "path"; /* for handling file paths */
 
-import Colors = require("colors.ts"); /* for adding colours to strings */
+const Colors = require("colors.ts"); /* for adding colours to strings */
 import { TaggedElement, TargetType } from "./types";
+import { LIB_VERSION } from "./version";
 import Parser from "./parser";
 
-const version = process.env.npm_package_version || "0.0.0";
+const version = LIB_VERSION;
 
 Colors.enable();
 import { ArgumentParser } from "argparse"; /* for parsing clargs */

@@ -7,6 +7,7 @@
 		"mdparse": "bundle/main.js"
 	},
 	"scripts": {
+		"prebundle": "node -p \"'export const LIB_VERSION = ' + JSON.stringify(require('./package.json').version) + ';'\" > src/version.ts",
 		"test": "jest",
 		"bundle": "tsc --project tsconfig.json",
 		"main": "node bundle/main.js",
