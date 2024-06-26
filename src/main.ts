@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import path from "path";
 import { WebSocketServer } from "ws";
 import * as fs from "fs";
