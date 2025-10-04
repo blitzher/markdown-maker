@@ -4,6 +4,10 @@ import path from "path";
 import { expect, jest, test } from "@jest/globals";
 import { TargetType } from "../src/types";
 
+function standardizeFilepathSeparators(filepath: string) {
+	return filepath.replace(/\\/g, "/");
+}
+
 beforeAll(() => {
 	return new Promise((res, rej) => {
 		fs.mkdir(path.join("tests", "test-files"), res);
@@ -41,4 +45,5 @@ export default {
 	put,
 	putDir,
 	TargetType,
+	standardizeFilepathSeparators,
 };

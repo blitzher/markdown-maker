@@ -1,5 +1,7 @@
+import path from "path";
 import { MDMError, MDMNonParserError } from "../src/errors";
 import util from "./_test-util";
+import Colors from "colors.ts";
 
 describe("Error handling", () => {
 	it("should dissallow undefined templates", () => {
@@ -7,9 +9,7 @@ describe("Error handling", () => {
 
 		const parser = new util.Parser("tests/test-files/sample1.md");
 
-		let answer =
-			'Template "UNDEF" not found!' +
-			"\n...on line 1 in tests/test-files/sample1.md".grey(15);
+		let answer = "\n...on line 1 in tests/test-files/sample1.md".grey(15);
 
 		util.expect(() => parser.get()).toThrow(MDMError);
 	});
@@ -19,11 +19,18 @@ describe("Error handling", () => {
 
 		function get() {
 			const parser = new util.Parser("tests/test-files/sample1.md");
-			parser.get();
+			util.standardizeFilepathSeparators(parser.get());
 		}
 
+		const os_appropriate_path = path.join(
+			"tests",
+			"test-files",
+			"sample_fld",
+			"sample_fld.md"
+		);
+
 		let answer =
-			'No entry file found in folder "sample_fld". Looking for "tests/test-files/sample_fld/sample_fld.md"' +
+			`No entry file found in folder "sample_fld". Looking for "${os_appropriate_path}"` +
 			"\n...on line 1 in tests/test-files/sample1.md".grey(15);
 
 		util.expect(get).toThrow(MDMError);
