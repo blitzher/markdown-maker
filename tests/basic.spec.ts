@@ -1,5 +1,6 @@
 import util from "./_test-util";
 import { MDMError } from "../src/errors";
+import * as fs from "fs";
 
 describe("Basic features", () => {
 	it("should join two files with include", () => {
@@ -13,11 +14,11 @@ describe("Basic features", () => {
 	});
 	it("should make a table of contents", () => {
 		const output = new util.Parser(
-			"# yo\n## bruh nugget\n#mdmaketoc"
+			"# yo\n## bruh nugget\n#mdmaketoc",
 		).get();
 
 		util.expect(output).toBe(
-			"# yo\n## bruh nugget\n* [yo](#yo)\n  * [bruh nugget](#bruh-nugget)\n\n"
+			"# yo\n## bruh nugget\n* [yo](#yo)\n  * [bruh nugget](#bruh-nugget)\n\n",
 		);
 	});
 	it("should allow quotation marks in titles for toc", () => {
@@ -25,16 +26,16 @@ describe("Basic features", () => {
 		const markdown = parser.get();
 
 		util.expect(markdown).toBe(
-			"# mac's farm\n* [mac's farm](#macs-farm)\n\n"
+			"# mac's farm\n* [mac's farm](#macs-farm)\n\n",
 		);
 	});
 	it("should allow variables in toc", () => {
 		const output = new util.Parser(
-			"#mddef<name=Foobar>\n# mr. #mdvar<name>\n#mdmaketoc<>"
+			"#mddef<name=Foobar>\n# mr. #mdvar<name>\n#mdmaketoc<>",
 		).get();
 
 		util.expect(output).toBe(
-			"\n# mr. Foobar\n* [mr. Foobar](#mr-foobar)\n\n"
+			"\n# mr. Foobar\n* [mr. Foobar](#mr-foobar)\n\n",
 		);
 	});
 	it("should not exceed max include depth", () => {
@@ -65,4 +66,16 @@ describe("Basic features", () => {
 
 		util.expect(output).toBe("hello\n\n");
 	});
+	it("should output a file when using the `to`", () => {
+		const parser = new util.Parser(`# Hello there`);
+		parser.to("tests/test-files/sample-out.md", () => {
+			const content = fs
+				.readFileSync("tests/test-files/sample-out.md")
+				.toString();
+			util.expect(content).toBe("# Hello there\n\n");
+		});
+		// Load file from disc
+	});
+
+	// util.expect()
 });

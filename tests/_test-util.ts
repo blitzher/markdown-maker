@@ -13,11 +13,6 @@ beforeAll(() => {
 		fs.mkdir(path.join("tests", "test-files"), res);
 	});
 });
-// afterAll(() => {
-// 	return new Promise((res, rej) => {
-// 		fs.rm(path.join("tests", "test-files"), { recursive: true }, res);
-// 	});
-// });
 
 function put(text: string | NodeJS.ArrayBufferView, file: string) {
 	fs.writeFileSync(path.join("tests", "test-files", file), text);
