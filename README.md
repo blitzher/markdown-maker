@@ -1,6 +1,6 @@
 # markdown-maker
 
-[![Mocha](https://github.com/blitzher/markdown-maker/actions/workflows/node.js.yml/badge.svg)](https://github.com/blitzher/markdown-maker/actions/workflows/node.js.yml)
+[![Jest](https://github.com/blitzher/markdown-maker/actions/workflows/node.js.yml/badge.svg)](https://github.com/blitzher/markdown-maker/actions/workflows/node.js.yml)
 
 A node parser for markdown variables and including of files.
 It is intended as a simplistic replacement for TeX documents, primarily for writing stories, D&D campaigns or other similar text based works.
