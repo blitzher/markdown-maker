@@ -32,7 +32,7 @@ class Parser {
 	constructor(
 		filename: string,
 		clargs?: IncompleteCommandLineArgs,
-		opts?: IncompleteParserOptions
+		opts?: IncompleteParserOptions,
 	) {
 		/* this.working_directory */
 		this.file = filename;
@@ -61,7 +61,7 @@ class Parser {
 		load_extensions(this);
 		if (this.opts.verbose || this.opts.debug) {
 			console.log(
-				`parsing ${this.file}: depth=${this.opts.depth}`.magenta
+				`parsing ${this.file}: depth=${this.opts.depth}`.magenta,
 			);
 		}
 
@@ -144,7 +144,7 @@ class Parser {
 			/* Add global flag to RegExp */
 			const re = new RegExp(
 				command.validator.source,
-				(command.validator.flags || "") + "g"
+				(command.validator.flags || "") + "g",
 			);
 
 			const replacer = (args: RegExpExecArray) => {
@@ -219,7 +219,7 @@ class Parser {
 
 	add_hook(
 		name: string,
-		hook: (map: { [key: string]: TaggedElement }) => void
+		hook: (map: { [key: string]: TaggedElement }) => void,
 	) {
 		if (this.opts.hooks[name] != undefined)
 			throw new MDMNonParserError(`Hook "${name}" already exists!`);
@@ -253,7 +253,7 @@ class Parser {
 		} else {
 			const htmlFileName = bundleName.replace(".md", ".html");
 			fs.writeFile(htmlFileName, this.html(), () =>
-				callback(htmlFileName)
+				callback(htmlFileName),
 			);
 		}
 	}
@@ -307,7 +307,7 @@ class Parser {
 				do {
 					if (error instanceof MDMError)
 						traceback += `\n...on line ${p.line_num_from_index(
-							error.match.index
+							error.match.index,
 						)} in ${p.file}`.grey(15);
 					else
 						traceback +=
@@ -356,7 +356,7 @@ export function splice(
 	str: string,
 	startIndex: number,
 	width: number,
-	newSubStr: string
+	newSubStr: string,
 ) {
 	const start = str.slice(0, startIndex);
 	const end = str.slice(startIndex + width);

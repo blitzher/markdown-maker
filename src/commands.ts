@@ -12,7 +12,7 @@ import {
 	TaggedElement,
 	TargetType,
 } from "./types";
-import { MDMError } from "./errors";
+import { MDMError, MDMWarning } from "./errors";
 
 const salt = crypto.randomBytes(2).toString("hex");
 
@@ -30,7 +30,7 @@ export class Command {
 	constructor(
 		validator: RegExp,
 		acter: (match: RegExpExecArray, parser: Parser) => string | void,
-		type: CommandType
+		type: CommandType,
 	) {
 		validator = new RegExp(validator.source, validator.flags);
 		this.validator = validator;
@@ -60,7 +60,7 @@ export class Command {
 new Command(
 	/(\s|^)!<(.+)>/,
 	(match, parser) => `${match[1]}#mdvar<${match[2]}>`,
-	CommandType.PREPARSE
+	CommandType.PREPARSE,
 );
 
 /* mddef */
@@ -69,7 +69,7 @@ new Command(
 	(match, parser) => {
 		parser.opts.defs[match[1]] = match[2].replace("_", " ");
 	},
-	CommandType.PARSE
+	CommandType.PARSE,
 );
 
 /* mdvar */
@@ -81,7 +81,7 @@ new Command(
 			throw new MDMError(`Undefined variable: ${match[1]}`, match);
 		return (value = value || `<${match[1]}>`);
 	},
-	CommandType.PARSE
+	CommandType.PARSE,
 );
 
 /** mdinclude */
@@ -112,7 +112,7 @@ new Command(
 			} else {
 				throw new MDMError(
 					`No entry file found in folder "${name}". Looking for "${entry}"`,
-					match
+					match,
 				);
 			}
 		}
@@ -133,7 +133,7 @@ new Command(
 		parser.opts.depth--;
 		return blob;
 	},
-	CommandType.PARSE
+	CommandType.PARSE,
 );
 
 /* mdlabel */
@@ -148,7 +148,7 @@ new Command(
 		parser.opts.secs.push({ level, title });
 		return `<span id="${link}"></span>`;
 	},
-	CommandType.PREPARSE
+	CommandType.PREPARSE,
 );
 
 /* mdref */
@@ -163,7 +163,7 @@ new Command(
 			if (i === parser.opts.secs.length - 1)
 				throw new MDMError(
 					`Reference to [${match[1]}] could not be resolved!`,
-					match
+					match,
 				);
 		}
 
@@ -174,7 +174,7 @@ new Command(
 		else if (parser.opts.targetType === TargetType.MARKDOWN)
 			return `[${match[1]}](#${link})`;
 	},
-	CommandType.PARSE
+	CommandType.PARSE,
 );
 
 /* mdtemplate */
@@ -190,14 +190,14 @@ new Command(
 			throw new MDMError(`Template \"${template}\" not found!`, match);
 		}
 	},
-	CommandType.PARSE
+	CommandType.PARSE,
 );
 
 /* mdmaketoc */
 new Command(
 	/#mdmaketoc(?:<>)?/,
 	(match, parser) => parser.get_toc(),
-	CommandType.POSTPARSE
+	CommandType.POSTPARSE,
 );
 
 /* mdadvhook */
@@ -230,7 +230,7 @@ new Command(
 					match[3]
 						.trim()
 						.split(" ")
-						.map((x) => x.split("="))
+						.map((x) => x.split("=")),
 				),
 				_raw: match[0],
 			};
@@ -240,7 +240,7 @@ new Command(
 		for (let taggedElement of Object.values(map)) {
 			innerBlob = innerBlob.replace(
 				taggedElement._raw,
-				salt + taggedElement["var-tag"] + salt
+				salt + taggedElement["var-tag"] + salt,
 			);
 		}
 
@@ -252,13 +252,13 @@ new Command(
 		for (let taggedElement of Object.values(map)) {
 			output = output.replace(
 				salt + taggedElement["var-tag"] + salt,
-				taggedElement.node.toString()
+				taggedElement.node.toString(),
 			);
 		}
 
 		return output;
 	},
-	CommandType.POSTPARSE
+	CommandType.POSTPARSE,
 );
 
 new Command(
@@ -280,7 +280,7 @@ new Command(
 
 		return `<${tag} ${id} ${cls_str}>${content.trim()}</${tag}>`;
 	},
-	CommandType.POSTPARSE
+	CommandType.POSTPARSE,
 );
 
 const loaded_extentions: fs.PathLike[] = [];
@@ -318,7 +318,7 @@ export function load_extensions(parser: Parser) {
 export function new_command(
 	regex: RegExp,
 	acter: (match: RegExpMatchArray, parser: Parser) => string,
-	type?: CommandType
+	type?: CommandType,
 ) {
 	new Command(regex, acter, type || CommandType.PARSE);
 }

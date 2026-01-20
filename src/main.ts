@@ -11,8 +11,7 @@ import Parser from "./parser";
 import { enable as ColorsEnable } from "colors.ts";
 ColorsEnable();
 
-import { argParser, CommandLineArgs, ParserOptions } from "./cltool";
-import { log } from "console";
+import { argParser, CommandLineArgs } from "./cltool";
 const configFileName = ".mdmconfig.json";
 
 function main() {
@@ -22,7 +21,7 @@ function main() {
 	/* Read config file or parse args from cmd-line */
 	if (fs.existsSync(configFileName)) {
 		let data: CommandLineArgs = JSON.parse(
-			fs.readFileSync(configFileName).toString()
+			fs.readFileSync(configFileName).toString(),
 		).opts;
 
 		let args: (string | number)[] = [];
@@ -52,8 +51,8 @@ function main() {
 				"..",
 				"src",
 				"templates",
-				"configTemplate.json"
-			)
+				"configTemplate.json",
+			),
 		);
 		fs.writeFileSync(configFileName, template);
 		fs.writeFileSync("main.md", "# Main\n");
